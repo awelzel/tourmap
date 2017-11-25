@@ -1,2 +1,4 @@
 Flask==0.12.2
 Flask-Assets==0.12
+
+requests==2.18.4
