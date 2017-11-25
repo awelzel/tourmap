@@ -14,6 +14,7 @@ class StravaClient(object):
         self.__client_secret = client_secret
 
         self.__base_url = base_url
+        self.__api_base_url = urljoin(self.__base_url, "/api/v3/")
         self.__session = requests.Session()
 
     def _post(self, url, *args, **kwargs):
@@ -75,4 +76,35 @@ class StravaClient(object):
             }
         )
         return response.json()
+
+    def _api_v3_get_auth(self, token, url, *args, **kwargs):
+        url = urljoin(self.__api_base_url, url)
+        print("URL JOINED: ", url, "api_base_url", self.__api_base_url)
+        session = self.__session
+        headers = {
+            "Authorization": "Bearer {}".format(token),
+        }
+        print(url, headers, kwargs)
+        response = self.__session.get(
+            url=url,
+            headers=headers,
+            **kwargs
+        )
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.exception("Error doing request...")
+            raise StravaError(repr(e) + " --- " + response.text)
+
+
+    def activities(self, token, page=None):
+        """
+        List activities of authenticated user
+        """
+        params = {}
+        if page is not None:
+            params["page"] = page
+
+        return self._api_v3_get_auth(token, "athlete/activities", params=params)
 

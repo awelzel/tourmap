@@ -1,6 +1,8 @@
 import os
 import logging
 
+import click
+
 from flask import Flask, render_template
 from flask_assets import Environment, Bundle
 
@@ -20,6 +22,10 @@ def create_app():
     app.config["STRAVA_CLIENT_ID"] = os.environ["STRAVA_CLIENT_ID"]
     app.config["STRAVA_CLIENT_SECRET"] = os.environ["STRAVA_CLIENT_SECRET"]
 
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     # Static assets...
     assets = Environment(app)
     bundles = {
@@ -36,15 +42,31 @@ def create_app():
     }
     assets.register(bundles)
 
+    # Database initialization
+    from tourmap import database
+    database.db.init_app(app)
+
+    @app.cli.command()
+    def resetdb():
+        database.resetdb()
+
+    @app.cli.command()
+    def iem():
+        from tourmap import database
+        import IPython
+        IPython.embed()
+
     @app.route("/")
     def index():
         return render_template("index.html")
 
+    @app.route("/test/db")
+    def test_db():
+        return repr(database.User.query.count())
+
+
     from tourmap.blueprints import strava
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
-
-    print("URL MAP")
-    print(app.url_map)
 
     return app
 

@@ -13,4 +13,9 @@
 
 ## Running
 
-    $ FLASK_APP=tourmap flask runbbk0
+    # source some variables
+    $ set -a
+    $ . ENV
+    $ set +a
+
+    $ FLASK_APP=tourmap/app.py flask run --reload --without-threads -h 0.0.0.0 --eager-loading
