@@ -1,5 +1,7 @@
 import logging
+import os
 import requests
+
 from urllib.parse import urljoin, urlencode, urlunparse
 
 logger = logging.getLogger(__name__)
@@ -9,7 +11,19 @@ class StravaError(Exception):
 
 class StravaClient(object):
 
-    def __init__(self, client_id, client_secret, base_url="https://www.strava.com"):
+    BASE_URL = "https://www.strava.com"
+
+    @staticmethod
+    def from_env():
+        """
+        Use some well known environment variables to initialize the client.
+        """
+        client_id = os.environ["STRAVA_CLIENT_ID"]
+        client_secret = os.environ["STRAVA_CLIENT_SECRET"]
+        base_url = os.environ.get("STRAVA_CLIENT_BASE_URL", StravaClient.BASE_URL)
+        return StravaClient(client_id, client_secret, base_url=base_url)
+
+    def __init__(self, client_id, client_secret, base_url=BASE_URL):
         self.__client_id = client_id
         self.__client_secret = client_secret
 
@@ -44,9 +58,9 @@ class StravaClient(object):
 
     def exchange_token(self, code):
         """
-        If successful, returns Athlete information.
+        If successful, returns Athlete and token info.
 
-                {'access_token': '5621ddc668f3dcefc319a095fed53039e7735974',
+                {'access_token': 'XXXXXXXXXXXXXXXXXXXXXXXXXXX53039e7735974',
                  'athlete': {'badge_type_id': 0,
                   'city': 'Hechingen',
                   'country': 'Germany',
@@ -56,17 +70,10 @@ class StravaClient(object):
                   'follower': None,
                   'friend': None,
                   'id': 11176987,
-                  'lastname': 'Welzel',
-                  'premium': False,
-                  'profile': 'https://dgalywyr863hv.cloudfront.net/pictures/athletes/11176987/4136348/3/large.jpg',
-                  'profile_medium': 'https://dgalywyr863hv.cloudfront.net/pictures/athletes/11176987/4136348/3/medium.jpg',
-                  'resource_state': 2,
-                  'sex': 'M',
-                  'state': 'Baden-Württemberg',
-                  'updated_at': '2017-11-23T00:00:06Z',
+                  ...
                   'username': 'arnewelzel'},
                  'token_type': 'Bearer'}
-                        """
+        """
         response = self._post(
             url="oauth/token",
             data={
@@ -78,13 +85,14 @@ class StravaClient(object):
         return response.json()
 
     def _api_v3_get_auth(self, token, url, *args, **kwargs):
+        """
+        Helper for an API v3 request.
+        """
         url = urljoin(self.__api_base_url, url)
-        print("URL JOINED: ", url, "api_base_url", self.__api_base_url)
         session = self.__session
         headers = {
             "Authorization": "Bearer {}".format(token),
         }
-        print(url, headers, kwargs)
         response = self.__session.get(
             url=url,
             headers=headers,
@@ -97,14 +105,15 @@ class StravaClient(object):
             logger.exception("Error doing request...")
             raise StravaError(repr(e) + " --- " + response.text)
 
-
-    def activities(self, token, page=None):
+    def activities(self, token, page=None, per_page=None):
         """
         List activities of authenticated user
         """
         params = {}
         if page is not None:
             params["page"] = page
+        if per_page is not None:
+            params["per_page"] = per_page
 
         return self._api_v3_get_auth(token, "athlete/activities", params=params)
 

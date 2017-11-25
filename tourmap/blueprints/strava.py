@@ -16,10 +16,9 @@ logger = logging.getLogger(__name__)
 def create_blueprint(app):
     strava = Blueprint("strava", __name__)
 
-    # XXX - this works only with a single thread!!! Check Flask-Plugins!
-    client_id = app.config["STRAVA_CLIENT_ID"]
-    client_secret = app.config["STRAVA_CLIENT_SECRET"]
-    strava_client = StravaClient(client_id, client_secret)
+    # XXX: This works only with a single thread or bad stuff might happen.
+    # Check Flask-Plugins and pooling...
+    strava_client = StravaClient.from_env()
 
     @strava.route("/callback")
     def callback():

@@ -3,9 +3,12 @@ import logging
 
 import click
 
-from flask import Flask, render_template
+from flask import Flask, render_template, abort
+# from flask.logging import default_handler
+
 from flask_assets import Environment, Bundle
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 def create_app():
@@ -22,6 +25,8 @@ def create_app():
     app.config["STRAVA_CLIENT_ID"] = os.environ["STRAVA_CLIENT_ID"]
     app.config["STRAVA_CLIENT_SECRET"] = os.environ["STRAVA_CLIENT_SECRET"]
 
+    app.config["HASHIDS_SALT"] = os.environ.get("HASHIDS_SALT", "UNCONFIGURED")
+    app.config["HASHIDS_MIN_LENGTH"] = int(os.environ.get("HASHIDS_MIN_LENGTH", 8))
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -47,8 +52,23 @@ def create_app():
     database.db.init_app(app)
 
     @app.cli.command()
+    def createdb():
+        database.db.metadata.create_all(
+            bind=database.db.engine,
+            checkfirst=True
+        )
+
+    @app.cli.command()
+    @click.argument("user_id", type=click.INT)
+    def sync_activities(user_id):
+        print(user_id)
+        from tourmap import tasks
+        tasks.sync_activities(user_id)
+
+    @app.cli.command()
     def resetdb():
-        database.resetdb()
+        database.db.drop_all()
+        database.db.create_all()
 
     @app.cli.command()
     def iem():
@@ -59,6 +79,21 @@ def create_app():
     @app.route("/")
     def index():
         return render_template("index.html")
+
+    @app.route("/users")
+    def user_index():
+        return render_template("users/index.html", users=database.User.query.all())
+
+    @app.route("/users/<hashid>")
+    def user(hashid):
+        user = database.User.get_by_hashid(hashid)
+        if user is None:
+            abort(404)
+        return render_template("users/user.html", user=user)
+
+    @app.route("/users/<hashid>/map")
+    def user_map(user_id):
+        return render_template("users/map.html", users=users)
 
     @app.route("/test/db")
     def test_db():
