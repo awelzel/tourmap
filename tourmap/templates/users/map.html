@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    {% assets "map_js" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+    {% assets "map_css" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}"/>
+    {% endassets %}
+{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="span2">
+        <h3>{{ user.firstname }}</h3>
+    </div>
+    <div class="span10">
+        <div id="mapid"></div>
+    </div>
+
+    <script>
+        var activities = {{ activities|tojson|safe }};
+        var mymap = L.map('mapid').setView([42.48341, 78.40335], 2);
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+                    maxZoom: 18, }).addTo(mymap);
+
+        for (let a of activities) {
+            var latlngs = a["latlngs"];
+            polyline = L.polyline(latlngs, {
+                color: 'red',
+                weight: 8
+            })
+            var title = "<h6>" + a["name"] + "</h6>\
+                         <p>Some description</p><p>\
+                         <img src=\"/static/gen/images/marker-icon.png\"></p>"
+            polyline.addTo(mymap);
+            // polyline.bindPopup(title)
+            // polyline.on('mouseover', function(e) {
+            //     this.openPopup();
+            // });
+            marker = L.marker(latlngs[latlngs.length - 1]);
+            marker.addTo(mymap);
+            marker.bindPopup(title)
+        }
+    </script>
+</div>
+{% endblock %}

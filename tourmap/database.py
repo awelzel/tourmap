@@ -5,6 +5,8 @@ import logging
 
 import dateutil.parser
 import hashids
+import polyline
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 
@@ -47,12 +49,14 @@ class User(db.Model):
             return None
         return User.query.get(user_id)
 
+
 class Token(db.Model):
     __tablename__ = "tokens"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
     access_token = db.Column(db.String(64), nullable=False)
     user = db.relationship(User, backref="token_list")
+
 
 class Activity(db.Model):
     """
@@ -69,6 +73,13 @@ class Activity(db.Model):
     summary_polyline = db.Column(db.Text, nullable=True)
 
     user = db.relationship(User)
+
+    @property
+    def latlngs(self):
+        if self.summary_polyline:
+            return polyline.decode(self.summary_polyline)
+        return []
+
 
     def update_from_strava(self, src):
         """

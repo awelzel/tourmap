@@ -43,7 +43,16 @@ def create_app():
         "css": Bundle(
             "css/lib/bootstrap-2.3.2.css",
             "css/tourmap.css",
-            output="gen/tourmap.css"),
+            output="gen/tourmap.css"
+        ),
+        "map_js": Bundle(
+            "js/lib/leaflet-1.2.0.js",
+            output="gen/map.js"
+        ),
+        "map_css": Bundle(
+            "css/lib/leaflet-1.2.0.css",
+            output="gen/map.css"
+        ),
     }
     assets.register(bundles)
 
@@ -92,13 +101,19 @@ def create_app():
         return render_template("users/user.html", user=user)
 
     @app.route("/users/<hashid>/map")
-    def user_map(user_id):
-        return render_template("users/map.html", users=users)
+    def user_map(hashid):
+        user = database.User.get_by_hashid(hashid)
+        activities = []
+        for src in user.activities:
+            if src.latlngs:
+                a = {
+                    "name": src.name, # MAKE HTML SAFE!
+                    "date": src.start_date_local.date().isoformat(),
+                    "latlngs": list(src.latlngs),
+                }
+                activities.append(a)
 
-    @app.route("/test/db")
-    def test_db():
-        return repr(database.User.query.count())
-
+        return render_template("users/map.html", user=user, activities=activities)
 
     from tourmap.blueprints import strava
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
