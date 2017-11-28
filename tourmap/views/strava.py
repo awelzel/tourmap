@@ -11,13 +11,13 @@ from tourmap import database
 
 
 def create_blueprint(app):
-    strava = Blueprint("strava", __name__)
+    bp = Blueprint("strava", __name__)
 
     # XXX: This works only with a single thread or bad stuff might happen.
     # Check Flask-Plugins and pooling...
     strava_client = tourmap.utils.strava.StravaClient.from_env(environ=app.config)
 
-    @strava.route("/callback")
+    @bp.route("/callback")
     def callback():
         if "error" in request.args:
             return "ERROR: {}".format(request.args["error"])
@@ -58,7 +58,7 @@ def create_blueprint(app):
         # XXX: Probably want to redirect so the URL does not look as bad...
         return render_template("strava/hello.html", firstname=user.firstname)
 
-    @strava.route("/authorize")
+    @bp.route("/authorize")
     def authorize():
         """
         Redirect the user to Strava asking to authorize our app.
@@ -70,7 +70,7 @@ def create_blueprint(app):
         redirect_uri = urlunparse(components)
         return redirect(strava_client.authorize_redirect_url(redirect_uri, state="CONNECT"))
 
-    @strava.route("/proxy/<int:user_id>/activities")
+    @bp.route("/proxy/<int:user_id>/activities")
     def activities(user_id):
         user = database.User.query.get_or_404(user_id)
         token = database.Token.query.filter_by(user_id=user.id).one_or_none()
@@ -96,4 +96,4 @@ def create_blueprint(app):
 
         return render_template("strava/activities.html", user=user, activities=cleaned_activities)
 
-    return strava
+    return bp

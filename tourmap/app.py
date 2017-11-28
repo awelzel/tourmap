@@ -81,39 +81,11 @@ def create_app():
     def index():
         return render_template("index.html")
 
-    @app.route("/users")
-    def user_index():
-        return render_template("users/index.html",
-                               users=database.User.query.all())
-
-    @app.route("/users/<hashid>")
-    def user(hashid):
-        user = database.User.get_by_hashid(hashid)
-        if user is None:
-            abort(404)
-        return render_template("users/user.html", user=user)
-
-    @app.route("/users/<hashid>/map")
-    def user_map(hashid):
-        user = database.User.get_by_hashid(hashid)
-        activities = []
-        for src in user.activities:
-            latlngs = list(src.latlngs)
-            if latlngs:
-                a = {
-                    "name": src.name,  # MAKE HTML SAFE!
-                    "date": src.start_date_local.date().isoformat(),
-                    "latlngs": latlngs,
-                    # Naive sampling:
-                    # "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
-                    "photos": [p.url for p in src.photos],
-                }
-                activities.append(a)
-
-        return render_template("users/map.html", user=user, activities=activities)
-
+    # Install a view views...
     from tourmap.views import strava
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
+    from tourmap.views import users
+    app.register_blueprint(users.create_blueprint(app), url_prefix="/users")
 
     return app
 
