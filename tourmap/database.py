@@ -67,6 +67,7 @@ class Activity(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     strava_id = db.Column(db.Integer, unique=True, nullable=False)
     name = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.Text, nullable=True)
     start_date = db.Column(db.DateTime, nullable=False)
     start_date_local = db.Column(db.DateTime, nullable=False)
     utc_offset = db.Column(db.Integer, nullable=False)
@@ -109,5 +110,24 @@ class Activity(db.Model):
         if polyline and self.summary_polyline != polyline:
             self.summary_polyline = polyline
 
+        if src.get("description") and self.description != src.get("description"):
+            self.description = src["description"]
+
 # Add activities.
 User.activities = db.relationship(Activity, order_by=Activity.start_date_local.desc())
+
+
+# XXX: Need photos endpoints
+class ActivityPhoto(db.Model):
+    __tablename__ = "activity_photos"
+    id = db.Column(db.Integer, primary_key=True)
+    strava_unique_id = db.Column(db.String(64), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activities.id"), nullable=False)
+    caption = db.Column(db.Text)
+    url = db.Column(db.String(255), nullable=False)
+
+    user = db.relationship(User)
+    activity = db.relationship(Activity)
+
+Activity.photos = db.relationship(ActivityPhoto, order_by=ActivityPhoto.id)

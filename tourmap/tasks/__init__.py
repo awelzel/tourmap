@@ -19,6 +19,10 @@ def sync_activities(user_id):
             break
 
         for src in activities:
+            # Fetch the detailed activity!
+            # src = client.activity(token, src["id"])
+            # import IPython
+            # IPython.embed()
             # get_or_create approach based on strava id
             activity = database.Activity.query.filter_by(strava_id=src["id"]).one_or_none()
             if activity is None:
@@ -33,6 +37,21 @@ def sync_activities(user_id):
             # Should check if we need to update!
             activity.update_from_strava(src)
             database.db.session.add(activity)
+
+            for p in client.activity_photos(token, activity.strava_id, size=128):
+            # Fetch photos with get_or_create()
+                photo = database.ActivityPhoto.query.filter_by(strava_unique_id=p["unique_id"]).one_or_none()
+                if photo is None:
+                    # import IPython
+                    # IPython.embed()
+                    photo = database.ActivityPhoto(
+                        strava_unique_id=p["unique_id"],
+                        user=user,
+                        activity=activity,
+                        caption=p.get("caption"),
+                        url=list(p["urls"].values())[0]
+                    )
+                    database.db.session.add(photo)
 
         logger.info("DIRTY OBJECTS: %s", repr(database.db.session.dirty))
         database.db.session.commit()

@@ -1,16 +1,13 @@
 """
 Strava OAUTH flow hacked together.
 """
-import logging
 from urllib.parse import urlunparse
 
 import dateutil.parser
-from flask import Blueprint, redirect, request, url_for, render_template
+from flask import Blueprint, redirect, request, url_for, render_template, abort
 
-from tourmap.utils.strava import StravaClient
+import tourmap.utils.strava
 from tourmap import database
-
-logger = logging.getLogger(__name__)
 
 
 def create_blueprint(app):
@@ -18,7 +15,7 @@ def create_blueprint(app):
 
     # XXX: This works only with a single thread or bad stuff might happen.
     # Check Flask-Plugins and pooling...
-    strava_client = StravaClient.from_env()
+    strava_client = tourmap.utils.strava.StravaClient.from_env(environ=app.config)
 
     @strava.route("/callback")
     def callback():
@@ -74,17 +71,20 @@ def create_blueprint(app):
         return redirect(strava_client.authorize_redirect_url(redirect_uri, state="CONNECT"))
 
     @strava.route("/proxy/<int:user_id>/activities")
-    def list_rides(user_id):
+    def activities(user_id):
         user = database.User.query.get_or_404(user_id)
         token = database.Token.query.filter_by(user_id=user.id).one_or_none()
         if token is None:
             abort(404)
 
-
         page = int(request.args.get("page")) if "page" in request.args else None
-        activities = strava_client.activities(token=token.access_token, page=page)
-        import pprint
-        pprint.pprint(activities[0])
+
+        try:
+            activities = strava_client.activities(token=token.access_token, page=page)
+        except tourmap.utils.strava.Timeout:
+            app.logger.warning("Strava timeout...")
+            abort(504)
+
         cleaned_activities = []
         for a in activities:
             ca = {

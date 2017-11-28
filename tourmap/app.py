@@ -11,25 +11,17 @@ from flask_assets import Environment, Bundle
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
+
 def create_app():
     app = Flask(__name__)
 
-    app.config["TEMPLATES_AUTO_RELOAD"] = True
-    # app.config["DEBUG"] = True
+    # Config reading - load all defaults tourmap/defaults.py, then
+    # override with settings in the file found through CONFIG_PYFILE,
+    # or fallback to config.py
+    app.config.from_object("tourmap.defaults")
+    app.config.from_pyfile(os.environ.get("CONFIG_PYFILE", "../config.py"))
 
-    # Load some configuration from the environment here
-    # XXX: Should be done more nicely:
-    # http://flask.pocoo.org/docs/0.12/config/#development-production
-    app.config["STRAVA_OAUTH_AUTHORIZE_URL"] = "https://www.strava.com/oauth/authorize"
-    app.config["STRAVA_OAUTH_TOKEN_URL"] = "https://www.strava.com/oauth/token"
-    app.config["STRAVA_CLIENT_ID"] = os.environ["STRAVA_CLIENT_ID"]
-    app.config["STRAVA_CLIENT_SECRET"] = os.environ["STRAVA_CLIENT_SECRET"]
-
-    app.config["HASHIDS_SALT"] = os.environ.get("HASHIDS_SALT", "UNCONFIGURED")
-    app.config["HASHIDS_MIN_LENGTH"] = int(os.environ.get("HASHIDS_MIN_LENGTH", 8))
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URL"]
 
     # Static assets...
     assets = Environment(app)
@@ -91,7 +83,8 @@ def create_app():
 
     @app.route("/users")
     def user_index():
-        return render_template("users/index.html", users=database.User.query.all())
+        return render_template("users/index.html",
+                               users=database.User.query.all())
 
     @app.route("/users/<hashid>")
     def user(hashid):
@@ -105,19 +98,24 @@ def create_app():
         user = database.User.get_by_hashid(hashid)
         activities = []
         for src in user.activities:
-            if src.latlngs:
+            latlngs = list(src.latlngs)
+            if latlngs:
                 a = {
-                    "name": src.name, # MAKE HTML SAFE!
+                    "name": src.name,  # MAKE HTML SAFE!
                     "date": src.start_date_local.date().isoformat(),
-                    "latlngs": list(src.latlngs),
+                    "latlngs": latlngs,
+                    # Naive sampling:
+                    # "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
+                    "photos": [p.url for p in src.photos],
                 }
                 activities.append(a)
 
         return render_template("users/map.html", user=user, activities=activities)
 
-    from tourmap.blueprints import strava
+    from tourmap.views import strava
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
 
     return app
+
 
 app = create_app()
