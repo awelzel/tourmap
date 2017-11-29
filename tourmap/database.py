@@ -4,6 +4,7 @@ For simplicity, also define the models here.
 import logging
 
 import dateutil.parser
+from dateutil.relativedelta import relativedelta
 import hashids
 import polyline
 
@@ -14,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
+
 
 class HashidMixin(object):
 
@@ -29,7 +31,6 @@ class HashidMixin(object):
     @classmethod
     def get_by_hashid(cls, hashid):
         id = cls.__get_Hashids().decode(hashid)
-        print("id=", id)
         if len(id) != 1:
             return None
         return cls.query.get(id[0])
@@ -51,10 +52,12 @@ class User(db.Model, HashidMixin):
     def token(self):
         return self.token_list[0]
 
+
 class Token(db.Model):
     __tablename__ = "tokens"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"),
+                        unique=True, nullable=False)
     access_token = db.Column(db.String(64), nullable=False)
     user = db.relationship(User, backref="token_list")
 
@@ -67,8 +70,8 @@ class Tour(db.Model, HashidMixin):
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
 
-    filter_start_date = db.Column(db.DateTime, nullable=True)
-    filter_end_date = db.Column(db.DateTime, nullable=True)
+    start_date = db.Column(db.DateTime, nullable=True)
+    end_date = db.Column(db.DateTime, nullable=True)
 
     tilelayer_provider = db.Column(db.String(16), nullable=True)
     polyline_color = db.Column(db.String(16), nullable=True)
@@ -76,14 +79,20 @@ class Tour(db.Model, HashidMixin):
     @property
     def activities(self):
         query = Activity.query.filter_by(user=self.user)
-        if self.filter_start_date:
-            query = query.filter(Activity.start_date >= self.filter_start_date)
-        if self.filter_end_date:
-            query = query.filter(Activity.end_date <= self.filter_end_date)
-
+        if self.start_date:
+            query = query.filter(Activity.start_date >= self.start_date)
+        if self.end_date:
+            query = query.filter(Activity.start_date <= self.end_date)
         return query
 
-User.tours = db.relationship(Tour, order_by=Tour.id)
+    @property
+    def start_date_str(self):
+        return self.start_date.date().isoformat() if self.start_date is not None else ""
+
+    @property
+    def end_date_str(self):
+        return self.end_date.date().isoformat() if self.end_date is not None else ""
+
 
 class Activity(db.Model):
     """
@@ -94,14 +103,14 @@ class Activity(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     strava_id = db.Column(db.BigInteger, unique=True, nullable=False)
     external_id = db.Column(db.String(255), nullable=True)
-    type = db.Column(db.String(32), nullable=False);
+    type = db.Column(db.String(32), nullable=False)
 
     name = db.Column(db.String(255))
     description = db.Column(db.Text, nullable=True)
 
-    distance = db.Column(db.Float);
-    moving_time = db.Column(db.Integer);
-    elapsed_time = db.Column(db.Integer);
+    distance = db.Column(db.Float)
+    moving_time = db.Column(db.Integer)
+    elapsed_time = db.Column(db.Integer)
     total_elevation_gain = db.Column(db.Float)
     average_temp = db.Column(db.Float, nullable=True)
 
@@ -116,7 +125,6 @@ class Activity(db.Model):
     end_lng = db.Column(db.Float)
     summary_polyline = db.Column(db.Text)
 
-
     user = db.relationship(User)
 
     @property
@@ -128,6 +136,61 @@ class Activity(db.Model):
             return polyline.decode(self.summary_polyline)
         return []
 
+    def seconds_to_readable_interval(self, seconds):
+        """
+        https://stackoverflow.com/questions/26164671/convert-seconds-to-readable-format-time
+
+        intervals = ['days','hours','minutes','seconds']
+        return " ".join("{} {}".format(getattr(rd, k), k)
+                        for k in intervals if getattr(rd, k))
+        """
+        rd = relativedelta(seconds=seconds)
+
+        result = "{:02}:{:02}".format(rd.minutes, rd.seconds)
+        if rd.hours > 0:
+            result = "{}:{}".format(rd.hours, result)
+        return result
+
+    @property
+    def moving_time_str(self):
+        return self.seconds_to_readable_interval(seconds=self.moving_time)
+
+    @property
+    def elapsed_time_str(self):
+        return self.seconds_to_readable_interval(seconds=self.elapsed_time)
+
+    @property
+    def distance_str(self):
+        """
+        Cycling is all about kilometers! Suck it!
+        """
+        if self.distance is None:
+            return ""
+
+        suffix = "m"
+        divisor = 1.0
+        if self.distance > 1000.0:
+            suffix = "km"
+            divisor = 1000.0
+
+        return "{:.1f} {}".format(self.distance / divisor, suffix)
+
+    @property
+    def elevation_gain_str(self):
+        return "{:.1f} m".format(self.total_elevation_gain)
+
+    @property
+    def average_temp_str(self):
+        if self.average_temp is None:
+            return ""
+        return "{:.0f} °C".format(self.average_temp)
+
+    @property
+    def strava_link(self):
+        """
+        Hackish...
+        """
+        return "https://www.strava.com/activities/{}".format(self.strava_id)
 
     def update_from_strava(self, src):
         """
@@ -153,8 +216,11 @@ class Activity(db.Model):
             self.start_date = start_date
 
         start_date_local = dateutil.parser.parse(src["start_date_local"])
-        if start_date_local.tzinfo is not None and start_date_local.utcoffset().seconds != 0:
-            raise Exception("Non UTC date parsed! {!r}".format(src["start_date_local"]))
+        if start_date_local.tzinfo is not None:
+            if start_date_local.utcoffset().seconds != 0:
+                msg = "Non UTC date parsed! {!r}".format(start_date_local)
+                raise Exception(msg)
+
         start_date_local = start_date_local.replace(tzinfo=None)
         if self.start_date_local is None or self.start_date_local != start_date_local:
             self.start_date_local = start_date_local
@@ -164,7 +230,6 @@ class Activity(db.Model):
 
         if src.get("timezone") and self.timezone != src["timezone"]:
             self.timezone = src["timezone"]
-
 
         polyline = src.get("map", {}).get("summary_polyline")
         if polyline and self.summary_polyline != polyline:
@@ -180,10 +245,6 @@ class Activity(db.Model):
         self.elapsed_time = src.get("elapsed_time")
         self.total_elevation_gain = src.get("total_elevation_gain")
         self.average_temp = src.get("average_temp")
-
-
-# Add activities.
-User.activities = db.relationship(Activity, order_by=Activity.start_date_local.desc())
 
 
 # XXX: Need photos endpoints
@@ -202,4 +263,7 @@ class ActivityPhoto(db.Model):
     user = db.relationship(User)
     activity = db.relationship(Activity)
 
+
+User.activities = db.relationship(Activity, order_by=Activity.start_date_local.desc())
+User.tours = db.relationship(Tour, order_by=Tour.id)
 Activity.photos = db.relationship(ActivityPhoto, order_by=ActivityPhoto.id)

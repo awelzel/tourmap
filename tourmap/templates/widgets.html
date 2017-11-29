@@ -1,23 +1,54 @@
 {# Macro creating a table of activities #}
-{% macro table_activities(activities) -%}
-<table class="table table-striped table-condensed">
+{% macro table_activities_summary(activities, truncate_name_len=255) -%}
+<table class="activities-table table table-striped table-condensed">
     <thead>
         <tr>
         <td>Date</td>
-        <td>Distance</td>
-        <td>Moving Time</td>
-        <td>Elapsed Time</td>
         <td>Name</td>
         </tr>
     </thead>
     <tbody>
         {% for a in activities %}
             <tr>
-                <td class="table-cell-date">{{ a.start_date_local.date().isoformat() }}</td>
-                <td>{{ a.distance }}</td>
-                <td>{{ a.moving_time }}</td>
-                <td>{{ a.elapsed_time }}</td>
-                <td>{{ a.name | truncate(64) }}</td>
+                <td>{{ a.start_date_local.date().isoformat() }}</td>
+                <td>{{ a.name | truncate(truncate_name_len) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+</table>
+{%- endmacro %}
+
+
+{#
+ # Macro creating a table of activities with a ton of details...
+ #}
+{% macro table_activities_detail(activities, truncate_name_len=255) -%}
+<table class="table table-striped table-condensed activities-table">
+    <thead>
+        <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Distance</th>
+        <th>Elevation Gain</th>
+        <th>Moving Time</th>
+        <th>Elapsed Time</th>
+        <th>Average Temperature</th>
+        <th>Strava Link</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in activities %}
+            <tr>
+                <td>{{ a.start_date_local.date().isoformat() }}</td>
+                <td>{{ a.type }}</td>
+                <td>{{ a.name | truncate(truncate_name_len) }}</td>
+                <td>{{ a.distance_str }}</td>
+                <td>{{ a.elevation_gain_str }}</td>
+                <td>{{ a.moving_time_str }}</td>
+                <td>{{ a.elapsed_time_str }}</td>
+                <td>{{ a.average_temp_str }}</td>
+                <td><a href="{{ a.strava_link }}" target="_blank">{{ a.strava_id }}</a></td>
             </tr>
         {% endfor %}
         </tbody>
@@ -39,8 +70,8 @@
             {% set link = url_for(".user_tour", user_hashid=user.hashid, tour_hashid=t.hashid) %}
             <td><a href="{{ link }}">{{ t.name }}</a></td>
             <td>{{ t.description or "" }}</td>
-            <td>{{ t.filter_start_date or ""}}</td>
-            <td>{{ t.filter_end_date or ""}}</td>
+            <td>{{ t.start_date_str }}</td>
+            <td>{{ t.end_date_str }}</td>
         </tr>
         {% endfor %}
     </tbody>

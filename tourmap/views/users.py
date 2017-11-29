@@ -27,7 +27,12 @@ def create_blueprint(app):
                     # "latlngs": latlngs,
                     # Naive sampling:
                     "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
-                    "photos": [{"url": p.url} for p in src.photos],
+                    "photos": [
+                        {
+                            "url": p.url,
+                            "width": p.width,
+                            "height": p.height,
+                        } for p in src.photos],
                 }
                 activities.append(a)
 
@@ -44,7 +49,7 @@ def create_blueprint(app):
     @bp.route("/<hashid>")
     def user(hashid):
         user = database.User.get_by_hashid(hashid)
-        limit = int(request.args.get("limit", 10))
+        limit = int(request.args.get("limit", 13))
         if user is None:
             app.logger.warning("Failed user lookup")
             abort(404)
@@ -58,5 +63,11 @@ def create_blueprint(app):
                                user=user, tours=user.tours,
                                recent_activities=recent_activities)
 
+    @bp.route("/<hashid>/activities")
+    def user_activities(hashid):
+        user = database.User.get_by_hashid(hashid)
+        return render_template("users/activities.html",
+                               user=user,
+                               activities=user.activities)
 
     return bp

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from 'widgets.html' import table_activities_detail %}
+{% block content %}
+<div class="row">
+    <div class="col-sm-12">
+        <h3>Activities</h3>
+        <h4>{{ user.firstname }}</h4>
+        <div>
+            {{ table_activities_detail(activities) }}
+        </div>
+    </div>
+</div>
+{% endblock %}

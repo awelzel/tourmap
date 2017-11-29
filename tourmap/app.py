@@ -73,7 +73,7 @@ def create_app():
 
     @app.cli.command()
     def iem():
-        from tourmap import database
+        from tourmap.database import Activity, ActivityPhoto, Tour, User
         import IPython
         IPython.embed()
 

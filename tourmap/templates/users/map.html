@@ -30,7 +30,6 @@
         var setViewDone = false;
         if (activities.length > 0) {
             for (let a of activities) {
-                console.log(JSON.stringify(a))
                 var latlngs = a["latlngs"]
                 if (latlngs.length > 0) {
                     var lat = latlngs[latlngs.length - 1][0];
@@ -57,14 +56,12 @@
 
 
         var photo_columns = 2;
-        var photoWidth = 128;
-        var popupWidth = photo_columns * photoWidth + 32;
 
+        var maxImgWidth = 0;
         function createPopupElementForActivity(a) {
-            console.log("creating popup")
             var popupRoot = document.createElement("div");
             $(popupRoot).addClass("activity-popup");
-            var popupTitle = document.createElement("h5");
+            var popupTitle = document.createElement("h4");
             $(popupTitle).text(a["name"])
             $(popupRoot).append(popupTitle);
 
@@ -88,17 +85,21 @@
                 }
                 var imgTd = document.createElement("td");
                 $(imgTd).addClass("photo-table-cell");
-                // imgTd.setAttribute("width", 100/photo_columns + "%");
                 $(imgTr).append(imgTd)
                 var img = document.createElement("img");
                 $(imgTd).append(img);
-                img.setAttribute("src", p["url"]);
-                img.setAttribute("width", photoWidth);
+                img.setAttribute("data-url", p["url"]);
+                img.setAttribute("width", p["width"]);
+                img.setAttribute("height", p["height"]);
+
+                maxImgWidth = Math.max(maxImgWidth, p["width"]);
                 i++;
             });
 
 
             $(popupRoot).append(imgTable);
+
+            popupRoot.setAttribute("width", maxImgWidth * 2);
 
             return popupRoot;
         }
@@ -140,8 +141,10 @@
                 var latlngs = a["latlngs"];
                 marker = L.marker(latlngs[latlngs.length - 1]);
                 markers.push(marker);
+                var content = createPopupElementForActivity(a);
+                var popupWidth = content.getAttribute("width");
                 var popup = L.popup({minWidth: popupWidth, maxWidth: popupWidth});
-                popup.setContent(createPopupElementForActivity(a))
+                popup.setContent(content);
                 marker.bindPopup(popup);
                 marker.addTo(map);
             }
@@ -168,6 +171,18 @@
         /* Register zoomed handler */
         map.on('zoomend', function() {
             toggleMarkers();
+        });
+
+        /*
+         * On demand loading of images inside the popup. If we were
+         * to create the <img> tags inside the popups from the beginning,
+         * the browswer will fetch'em all, even if the popup is not open.
+         */
+        map.on('popupopen', function(e) {
+            window.popupopenE = e.popup;
+            $(e.popup.getContent()).find('img:not([src])').each(function() {
+                $(this).attr("src", $(this).attr("data-url"));
+            });
         });
     </script>
 </div>
