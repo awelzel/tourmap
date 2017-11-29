@@ -1,13 +1,7 @@
-#navigation {
-    margin-bottom: 20px;
-}
-
-img {
-  max-width: none;
-}
-
-.activity-popup {
-  /* border: 3px solid blue */
+/* For navbar to work properly... */
+body {
+  padding-top: 70px;
+  /* min-height: 2000px; */
 }
 
 .photos-table {

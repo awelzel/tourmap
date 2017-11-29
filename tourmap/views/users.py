@@ -36,7 +36,7 @@ def create_blueprint(app):
                 }
                 activities.append(a)
 
-        return render_template("users/map.html",
+        return render_template("users/tour.html",
                                user=user,
                                tour=tour,
                                activities=activities)

@@ -17,6 +17,10 @@ def create_blueprint(app):
     # Check Flask-Plugins and pooling...
     strava_client = tourmap.utils.strava.StravaClient.from_env(environ=app.config)
 
+    @bp.route("/connect")
+    def connect():
+        return render_template("strava/connect.html")
+
     @bp.route("/callback")
     def callback():
         if "error" in request.args:

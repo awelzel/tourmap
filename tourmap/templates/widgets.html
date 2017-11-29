@@ -1,6 +1,6 @@
 {# Macro creating a table of activities #}
 {% macro table_activities_summary(activities, truncate_name_len=255) -%}
-<table class="activities-table table table-striped table-condensed">
+<table style="table-layout: auto" class="activities-table table table-striped table-condensed">
     <thead>
         <tr>
         <td>Date</td>
@@ -34,7 +34,7 @@
         <th>Moving Time</th>
         <th>Elapsed Time</th>
         <th>Average Temperature</th>
-        <th>Strava Link</th>
+        <th>View on Strava</th>
         </tr>
     </thead>
     <tbody>

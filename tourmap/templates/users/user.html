@@ -12,11 +12,11 @@
         {{ table_tours(user, tours) }}
     </div>
     <div class="col-sm-6">
-        <h4>{{ recent_activities | length }} Most Recent Activities (
-        <a href="{{ url_for(".user_activities", hashid=user.hashid) }}">See all</a>)</h4>
+        <h4>{{ recent_activities | length }} Most Recent Activities</h4>
         <div>
             {{ table_activities_summary(recent_activities) }}
         </div>
+        <h4><a href="{{ url_for(".user_activities", hashid=user.hashid) }}">See all...</a></h4>
     </div>
 </div>
 {% endblock %}

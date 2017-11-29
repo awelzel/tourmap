@@ -15,22 +15,42 @@
     <title>{% block title %}{% endblock %}</title>
     </head>
     <body>
-
-    <div id="content" class="container-fluid">
-        <div id="navigation" class="navbar lavender">
-            <div class="row">
-                <div class="col-sm-4">NAVBAR</div>
-            </div>
+    <nav id="navigation" class="navbar navbar-default navbar-fixed-top">
+      <div id="navigation" class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="navbar-brand">tourmap</div>
         </div>
-        {% block content %}
-        {% endblock %}
-        <div id="footer" class="footer navbar-fixed-bottom lavender">
-            <div class="row">
-                <div class="col-sm-4 ">FOOTER</div>
-            </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="{{ url_for("index") }}">Home</a></li>
+            <li><a href="{{ url_for("users.index") }}">Users</a></li>
+            <li><a href="{{ url_for("strava.connect") }}">Connect with Strava</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <!-- <li><a href="{{ url_for("about") }}">About</a></li> -->
+            <li>
+                <a href="https://www.strava.com" target="_blank">
+                    <img alt="Powered by Strava" height="25px" src="{{ url_for("static", filename="strava/api_logo_pwrdBy_strava_horiz_light.png")}}">
+                </a>
+            </li>
+          </ul>
         </div>
+      </div>
+    </nav>
+    <div class="container-fluid">
+	<div class="jumbotron">
+	    {% block content %}
+	    {% endblock %}
+	</div>
+        <div id="footer"></nav>
     </div>
     </body>
-    {% block after_body %}
-    {% endblock %}
+    {% block after_body -%}
+    {% endblock -%}
 </html>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block content %}
+{% block title %}Users{% endblock %}
+{% block content -%}
 <div class="row">
     <div class="col-sm-4">
         <h3>Users</h3>
@@ -8,18 +9,20 @@
         <table class="table table-striped table-condensed">
             <thead>
                 <tr>
-                    <td>Name</td>
+                    <th>Name</th>
+                    <th>View on Strava</th>
                 </tr>
             </thead>
             <tbody>
-                {% for u in users %}
+                {% for u in users -%}
                 <tr>
-                    {% set link = url_for(".user", hashid=u.hashid) %}
+                    {% set link = url_for(".user", hashid=u.hashid) -%}
                     <td><a href="{{ link }}">{{ u.firstname}} {{ u.lastname }}</a></td>
+                    <td><a href="{{ u.strava_link }}" target="_blank">{{ u.strava_id }}</a></td>
                 </tr>
-                {% endfor %}
+                {%- endfor %}
             </tbody>
         </table>
     </div>
 </div>
-{% endblock %}
+{%- endblock %}

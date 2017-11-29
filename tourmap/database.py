@@ -52,6 +52,13 @@ class User(db.Model, HashidMixin):
     def token(self):
         return self.token_list[0]
 
+    @property
+    def strava_link(self):
+        """
+        Hackish...
+        """
+        return "https://www.strava.com/athletes/{}".format(self.strava_id)
+
 
 class Token(db.Model):
     __tablename__ = "tokens"

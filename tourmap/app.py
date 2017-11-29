@@ -81,6 +81,10 @@ def create_app():
     def index():
         return render_template("index.html")
 
+    @app.route("/about")
+    def about():
+        return render_template("about.html")
+
     # Install a view views...
     from tourmap.views import strava
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
@@ -88,6 +92,5 @@ def create_app():
     app.register_blueprint(users.create_blueprint(app), url_prefix="/users")
 
     return app
-
 
 app = create_app()
