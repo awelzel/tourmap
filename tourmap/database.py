@@ -15,8 +15,31 @@ logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
 
+class HashidMixin(object):
 
-class User(db.Model):
+    @classmethod
+    def __get_Hashids(cls):
+        # XXX" This is ugly
+        from tourmap.app import app
+        salt = app.config["HASHIDS_SALT"]
+        salt = "{}{}".format(cls.__name__, salt)
+        min_length = app.config["HASHIDS_MIN_LENGTH"]
+        return hashids.Hashids(salt, min_length=min_length)
+
+    @classmethod
+    def get_by_hashid(cls, hashid):
+        id = cls.__get_Hashids().decode(hashid)
+        print("id=", id)
+        if len(id) != 1:
+            return None
+        return cls.query.get(id[0])
+
+    @property
+    def hashid(self, salt=None):
+        return self.__get_Hashids().encode(self.id)
+
+
+class User(db.Model, HashidMixin):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     strava_id = db.Column(db.Integer, unique=True, nullable=False)
@@ -28,28 +51,6 @@ class User(db.Model):
     def token(self):
         return self.token_list[0]
 
-    @property
-    def hashid(self, salt=None):
-        # XXX" This is ugly
-        from tourmap.app import app
-        salt = app.config["HASHIDS_SALT"]
-        min_length = app.config["HASHIDS_MIN_LENGTH"]
-
-        hids = hashids.Hashids(salt, min_length=min_length)
-        return hids.encode(self.id)
-
-    @staticmethod
-    def get_by_hashid(hashid):
-        from tourmap.app import app
-        salt = app.config["HASHIDS_SALT"]
-        min_length = app.config["HASHIDS_MIN_LENGTH"]
-        hids = hashids.Hashids(salt, min_length=min_length)
-        user_id = hids.decode(hashid)
-        if len(user_id) != 1:
-            return None
-        return User.query.get(user_id)
-
-
 class Token(db.Model):
     __tablename__ = "tokens"
     id = db.Column(db.Integer, primary_key=True)
@@ -57,6 +58,25 @@ class Token(db.Model):
     access_token = db.Column(db.String(64), nullable=False)
     user = db.relationship(User, backref="token_list")
 
+
+class Tour(db.Model, HashidMixin):
+    __tablename__ = "tours"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
+    user = db.relationship(User)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    filter_start_date = db.Column(db.DateTime, nullable=True)
+    filter_end_date = db.Column(db.DateTime, nullable=True)
+
+    tilelayer_provider = db.Column(db.String(32), nullable=True)
+
+    @property
+    def activities(self):
+        raise NotImplementedError()
+
+User.tours = db.relationship(Tour, order_by=Tour.id)
 
 class Activity(db.Model):
     """
