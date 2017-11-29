@@ -28,12 +28,13 @@ def create_app():
     bundles = {
         "base_js": Bundle(
             "js/lib/jquery-3.2.1.js",
-            "js/lib/bootstrap-2.3.2.js",
+            "js/lib/bootstrap-3.3.7.js",
             "js/tourmap.js",
             output="gen/tourmap.js"
         ),
         "css": Bundle(
-            "css/lib/bootstrap-2.3.2.css",
+            "css/lib/bootstrap-3.3.7.css",
+            "css/lib/bootstrap-theme-3.3.7.css",
             "css/tourmap.css",
             output="gen/tourmap.css"
         ),

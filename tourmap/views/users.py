@@ -5,7 +5,7 @@ from tourmap import database
 def create_blueprint(app):
     bp = Blueprint("users", __name__)
 
-    @bp.route("/<user_hashid>/tour/<tour_hashid>/map")
+    @bp.route("/<user_hashid>/tours/<tour_hashid>")
     def user_map(user_hashid, tour_hashid):
         user = database.User.get_by_hashid(user_hashid)
         unused = tour_hashid  # XXX: Make this work once Tour is implemented
@@ -16,10 +16,10 @@ def create_blueprint(app):
                 a = {
                     "name": src.name,  # MAKE HTML SAFE!
                     "date": src.start_date_local.date().isoformat(),
-                    "latlngs": latlngs,
+                    # "latlngs": latlngs,
                     # Naive sampling:
-                    # "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
-                    "photos": [p.url for p in src.photos],
+                    "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
+                    "photos": [{"url": p.url} for p in src.photos],
                 }
                 activities.append(a)
 

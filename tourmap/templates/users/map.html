@@ -10,38 +10,149 @@
 {% endblock %}
 {% block content %}
 <div class="row">
-    <div class="span2">
-        <h3>{{ user.firstname }}</h3>
+    <div class="col-sm-4">
+        <div id="name">
+            <h3>{{ user.firstname }}</h3>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 lavender">XXX</div>
+            <div class="col-sm-2 teal">YYY</div>
+        </div>
     </div>
-    <div class="span10">
+    <div class="col-sm-8">
         <div id="mapid"></div>
     </div>
 
     <script>
         var activities = {{ activities|tojson|safe }};
-        var mymap = L.map('mapid').setView([42.48341, 78.40335], 2);
+        var map = L.map('mapid');
+        map.setView([42.48341, 78.40335], 3); // XXX: Automatically detect!
+
+/*        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
+            { maxZoom: 18,
+              attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' + 'Imagery © <a href="http://mapbox.com">Mapbox</a>', id: 'mapbox.streets' }).addTo(map);
+              */
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
-                    maxZoom: 18, }).addTo(mymap);
+                    maxZoom: 18, }).addTo(map);
+
+
+        var photo_columns = 2;
+        var photoWidth = 128;
+        var popupWidth = photo_columns * photoWidth + 32;
+
+        function createPopupElementForActivity(a) {
+            console.log("creating popup")
+            var popupRoot = document.createElement("div");
+            $(popupRoot).addClass("activity-popup");
+            var popupTitle = document.createElement("h5");
+            $(popupTitle).text(a["name"])
+            $(popupRoot).append(popupTitle);
+
+            var popupDesc = document.createElement("div");
+            $(popupDesc).text(a["photos"].length + " Photos");
+            $(popupRoot).append(popupDesc);
+
+            // Ugh, table...
+            var imgTable = document.createElement("table");
+            $(imgTable).addClass("photos-table");
+
+            var imgTbody= document.createElement("tbody");
+            $(imgTable).append(imgTbody);
+
+            var imgTr = null;
+            var i = 0;
+            a["photos"].forEach(function(p) {
+                if (i % photo_columns == 0) {
+                    imgTr = document.createElement("tr");
+                    $(imgTbody).append(imgTr);
+                }
+                var imgTd = document.createElement("td");
+                $(imgTd).addClass("photos-table-cell");
+                // imgTd.setAttribute("width", 100/photo_columns + "%");
+                $(imgTr).append(imgTd)
+                var img = document.createElement("img");
+                $(imgTd).append(img);
+                img.setAttribute("src", p["url"]);
+                img.setAttribute("width", photoWidth);
+                i++;
+            });
+
+
+            $(popupRoot).append(imgTable);
+
+            return popupRoot;
+        }
 
         for (let a of activities) {
+
             var latlngs = a["latlngs"];
             polyline = L.polyline(latlngs, {
-                color: 'red',
+                color: 'teal',
                 weight: 8
             })
-            var title = "<h6>" + a["name"] + "</h6>\
-                         <p>Some description</p><p>\
-                         <img src=\"/static/gen/images/marker-icon.png\"></p>"
-            polyline.addTo(mymap);
-            // polyline.bindPopup(title)
-            // polyline.on('mouseover', function(e) {
-            //     this.openPopup();
-            // });
-            marker = L.marker(latlngs[latlngs.length - 1]);
-            marker.addTo(mymap);
-            marker.bindPopup(title)
+            polyline.addTo(map);
         }
+
+        // Register resize event to update the map size.
+        // This is pretty nasty...
+        $(window).resize(map, function() {
+            var nav_height = $("#navigation").outerHeight(true); /* include margin */
+            var footer_height = $("#footer").outerHeight(true);
+
+            var window_height = $(window).height();
+            var new_height = Math.max(window_height - nav_height - footer_height, 100);
+            var old_height = map.getSize().y
+            console.log("window_height=" + window_height  + " new_height=" + new_height + " old_height=" + old_height + " nav_height=" + nav_height + " footer_height=" + footer_height);
+            if (new_height != old_height) {
+                $("#mapid").height(new_height);
+                map.invalidateSize();
+            }
+        });
+
+        var markers = [];
+
+        function placeMarkers(bounds) {
+            if (markers.length > 0) {
+                console.log("Markers already added!");
+                return;
+            }
+            for (let a of activities) {
+                var latlngs = a["latlngs"];
+                marker = L.marker(latlngs[latlngs.length - 1]);
+                markers.push(marker);
+                var popup = L.popup({minWidth: popupWidth, maxWidth: popupWidth});
+                popup.setContent(createPopupElementForActivity(a))
+                marker.bindPopup(popup);
+                marker.addTo(map);
+            }
+        };
+
+        function dropMarkers() {
+            markers.forEach(function(m) {
+                map.removeLayer(m);
+            });
+            markers.length = 0;
+        }
+
+        /* Register zoomed handler */
+        map.on('zoomend', function() {
+            var level = map.getZoom();
+            var bounds = map.getBounds();
+            console.log("level=" + level + " bounds = " + bounds);
+
+            if (level >= 6) {
+                placeMarkers();
+            } else {
+                dropMarkers();
+            }
+        });
     </script>
 </div>
+{% endblock %}
+{% block after_body %}
+    {{ super() }}
+    <script>
+        $(window).resize();
+    </script>
 {% endblock %}
