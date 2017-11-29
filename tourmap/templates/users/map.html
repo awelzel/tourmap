@@ -12,11 +12,8 @@
 <div class="row">
     <div class="col-sm-4">
         <div id="name">
-            <h3>{{ user.firstname }}</h3>
-        </div>
-        <div class="row">
-            <div class="col-sm-2 lavender">XXX</div>
-            <div class="col-sm-2 teal">YYY</div>
+            <h3>Tour {{ tour.name }}</h3>
+            <h4>{{ user.firstname }}</h4>
         </div>
     </div>
     <div class="col-sm-8">
@@ -24,9 +21,31 @@
     </div>
 
     <script>
+
+        // XXX: We put all data into the template.
+        // Alternative: Fetch via AJAX, but only nice to have...
         var activities = {{ activities|tojson|safe }};
+
         var map = L.map('mapid');
-        map.setView([42.48341, 78.40335], 3); // XXX: Automatically detect!
+        var setViewDone = false;
+        if (activities.length > 0) {
+            for (let a of activities) {
+                console.log(JSON.stringify(a))
+                var latlngs = a["latlngs"]
+                if (latlngs.length > 0) {
+                    var lat = latlngs[latlngs.length - 1][0];
+                    var lng = latlngs[latlngs.length - 1][1];
+                    map.setView([lat, lng], 6);
+                    setViewDone = true;
+                    console.log("setView done!")
+                    break;
+                }
+            }
+        }
+        if (!setViewDone) {
+            console.log("setView fallback!")
+            map.setView([42.48341, 78.40335], 4);
+        }
 
 /*        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
             { maxZoom: 18,
@@ -68,7 +87,7 @@
                     $(imgTbody).append(imgTr);
                 }
                 var imgTd = document.createElement("td");
-                $(imgTd).addClass("photos-table-cell");
+                $(imgTd).addClass("photo-table-cell");
                 // imgTd.setAttribute("width", 100/photo_columns + "%");
                 $(imgTr).append(imgTd)
                 var img = document.createElement("img");
@@ -135,17 +154,20 @@
             markers.length = 0;
         }
 
-        /* Register zoomed handler */
-        map.on('zoomend', function() {
+        function toggleMarkers() {
             var level = map.getZoom();
             var bounds = map.getBounds();
             console.log("level=" + level + " bounds = " + bounds);
-
             if (level >= 6) {
                 placeMarkers();
             } else {
                 dropMarkers();
             }
+        }
+
+        /* Register zoomed handler */
+        map.on('zoomend', function() {
+            toggleMarkers();
         });
     </script>
 </div>
@@ -154,5 +176,6 @@
     {{ super() }}
     <script>
         $(window).resize();
+        toggleMarkers();
     </script>
 {% endblock %}

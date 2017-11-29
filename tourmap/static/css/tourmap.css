@@ -1,9 +1,4 @@
-html, body {
-    height: 100%;
-}
-
 #navigation {
-    background-color: orange;
     margin-bottom: 20px;
 }
 
@@ -11,28 +6,18 @@ img {
   max-width: none;
 }
 
-.lavender {
-    background-color: lavender;
-}
-.teal {
-    background-color: teal;
-}
-
-.footer {
-    height: 100px;
-}
-
 .activity-popup {
-  border: 3px solid blue;
+  /* border: 3px solid blue */
 }
 
 .photos-table {
   text-align: center;
   vertical-align: center;
   width: 100%;
-  border: 3px solid red;
-}
-.photos-table-cell {
-  border: 2px solid green;
+  /* border: 3px solid red; */
 }
 
+.photo-table-cell {
+  padding: 5px;
+  /* border: 2px solid green */
+}

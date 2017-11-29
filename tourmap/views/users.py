@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, request, current_app
 
 from tourmap import database
 
@@ -6,11 +6,19 @@ def create_blueprint(app):
     bp = Blueprint("users", __name__)
 
     @bp.route("/<user_hashid>/tours/<tour_hashid>")
-    def user_map(user_hashid, tour_hashid):
+    def user_tour(user_hashid, tour_hashid):
         user = database.User.get_by_hashid(user_hashid)
-        unused = tour_hashid  # XXX: Make this work once Tour is implemented
+        tour = database.Tour.get_by_hashid(tour_hashid)
+
+        if user is None or tour is None:
+            abort(404)
+
+        if (tour.user.id != user.id):
+            app.logger.warning("Got request for mismatched user/tour")
+            abort(404)
+
         activities = []
-        for src in user.activities:
+        for src in tour.activities:
             latlngs = list(src.latlngs)
             if latlngs:
                 a = {
@@ -23,7 +31,10 @@ def create_blueprint(app):
                 }
                 activities.append(a)
 
-        return render_template("users/map.html", user=user, activities=activities)
+        return render_template("users/map.html",
+                               user=user,
+                               tour=tour,
+                               activities=activities)
 
     @bp.route("/")
     def index():
@@ -33,10 +44,19 @@ def create_blueprint(app):
     @bp.route("/<hashid>")
     def user(hashid):
         user = database.User.get_by_hashid(hashid)
+        limit = int(request.args.get("limit", 10))
         if user is None:
             app.logger.warning("Failed user lookup")
             abort(404)
-        return render_template("users/user.html", user=user)
+
+        recent_activities = (database.Activity.query
+                             .filter_by(user=user)
+                             .order_by(database.Activity.start_date.desc())
+                             .limit(limit)
+                             .all())
+        return render_template("users/user.html",
+                               user=user, tours=user.tours,
+                               recent_activities=recent_activities)
 
 
     return bp

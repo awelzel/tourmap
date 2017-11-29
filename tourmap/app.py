@@ -63,9 +63,8 @@ def create_app():
     @app.cli.command()
     @click.argument("user_id", type=click.INT)
     def sync_activities(user_id):
-        print(user_id)
         from tourmap import tasks
-        tasks.sync_activities(user_id)
+        tasks.sync_activities(user_id, environ=app.config)
 
     @app.cli.command()
     def resetdb():
