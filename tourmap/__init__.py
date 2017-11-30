@@ -4,57 +4,19 @@ import logging
 import click
 
 from flask import Flask, render_template, abort
-# from flask.logging import default_handler
-
 from flask_assets import Environment, Bundle
 
-logging.basicConfig(level=logging.DEBUG)
+import tourmap.config
+
+
 logger = logging.getLogger(__name__)
-
-
-def _is_heroku_env(environ=None):
-    environ = os.environ if not environ else environ
-    return "DYNO" in environ and "heroku" in os.environ.get("PATH", "")
-
-
-def configure_app(app, config):
-    """
-    Load the configuration for this app.
-
-    Developing locally should be easy by using CONFIG_PYFILE and loading
-    a local file. At the same time, we want to easily support heroku by
-    just fetching everything from the environment.
-
-    :param config: Set the app.config from this dictionary and do not
-        try any other methods of configuration. This should be used for
-        testing...
-    """
-    app.config.from_object("tourmap.config.defaults")
-
-    if config:
-        logger.info("Explicit config dict provided...")
-        app.config.update(config)
-    elif _is_heroku_env():
-        logger.info("Detected heroku environment...")
-        app.config.from_object("tourmap.config.heroku")
-    else:
-        config_pyfile = os.environ.get("CONFIG_PYFILE", "../config.py")
-        logger.info("Reading local config %s...", config_pyfile)
-        app.config.from_pyfile(config_pyfile)
-
-    # SQLAlchemy configuration...
-    from tourmap import database
-    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URL"]
-    database.db.init_app(app)
-
-    return app
 
 
 def create_app(config=None):
     app = Flask(__name__)
 
     # Load default configuration that is with the application
-    app = configure_app(app, config=config)
+    app = tourmap.config.configure_app(app, config=config)
 
     # Static assets...
     assets = Environment(app)
@@ -119,5 +81,7 @@ def create_app(config=None):
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
     from tourmap.views import users
     app.register_blueprint(users.create_blueprint(app), url_prefix="/users")
+    from tourmap.views import tours
+    app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
 
     return app

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from 'widgets.html' import table_tours %}
+{% block title %}All Tours{% endblock title %}
+{% block content %}
+<div class="row">
+    <div class="col-sm-4">
+        <h3>Tours</h3>
+    </div>
+    <div class="col-sm-6">
+        <h4>Tours</h4>
+        {{ table_tours(tours) }}
+    </div>
+</div>
+{%- endblock %}
