@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="{{ ASSET_URL }}"/>
     {% endassets %}
 {% endblock %}
+{% block title %}{{ tour.name }} - by {{ user.firstname }}{% endblock %}
 {% block content %}
 <div class="row">
     <div class="col-sm-2">
@@ -126,7 +127,7 @@
             var footer_height = $("#footer").outerHeight(true);
 
             var window_height = $(window).height();
-            var new_height = Math.max(window_height - map_pos.top - footer_height, 100);
+            var new_height = Math.max(window_height - map_pos.top - footer_height - 20, 100);
             var old_height = map.getSize().y
             // console.log("window_height=" + window_height  + " new_height=" + new_height + " old_height=" + old_height + " nav_height=" + nav_height + " footer_height=" + footer_height);
             if (new_height != old_height) {

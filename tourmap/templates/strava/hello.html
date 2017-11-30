@@ -4,8 +4,9 @@
     <div class="span12">
         <h3>Hello {{ firstname }}!</h3>
         <div class="alert alert-success">
-            You have authorized <emph>tourmap</emph> access to your Strava data. Thanks!
+            You have authorized <em>{{ config.APP_NAME }}</em> access to your Strava data. Thanks!
         </div>
+        <!-- </p>Head over to the <a href="{{ url_for("users.index") }}">users</a> page!</p> -->
     </div>
 </div>
 {% endblock %}

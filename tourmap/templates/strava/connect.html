@@ -5,14 +5,18 @@
 <div class="row">
     <div class="col-sm-12">
         <p>
-            Clicking on below button will authorize <i>tourmap</i> to access all your Strava data.
-            This also means that anyone that knows about <i>tourmap</i> can see your activities here.
+            Are you a Strava user?
         </p>
         <p>
-            Don't worry, that's next to no one.
+            Clicking on below button will authorize <em>{{ config.APP_NAME }}</em> to access all your Strava data.
+        <p>
+            This also means that anyone that knows about <em>{{ config.APP_NAME }}</em> can see your activities here.
+        </p>
+        <p>
+            But, don't worry - that's next to no one.
         </p>
         <a href="{{ url_for("strava.authorize") }}">
-            <img src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
+            <img alt="Connect with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
         </a>
     </div>
 </div>
