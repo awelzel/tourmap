@@ -12,15 +12,36 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
 
+def _is_heroku_env(environ=None):
+    environ = os.environ if not environ else environ
+    return "DYNO" in environ and "heroku" in os.environ.get("PATH", "")
+
+
+def configure_app(app):
+    """
+    Load the configuration for this app.
+
+    Developing locally should be easy by using CONFIG_PYFILE and loading
+    a local file. At the same time, we want to easily support heroku by
+    just fetching everything from the environment.
+    """
+    app.config.from_object("tourmap.config.defaults")
+
+    # Check the environment we are running in...
+    if _is_heroku_env():
+        logger.info("Detected heroku environment...")
+        app.config.from_object("tourmap.config.heroku")
+    else:
+        config_pyfile = os.environ.get("CONFIG_PYFILE", "../config.py")
+        logger.info("Reading local config %s...", config_pyfile)
+        app.config.from_pyfile(config_pyfile)
+
+    return app
+
+
 def create_app():
     app = Flask(__name__)
-
-    # Config reading - load all defaults tourmap/defaults.py, then
-    # override with settings in the file found through CONFIG_PYFILE,
-    # or fallback to config.py
-    app.config.from_object("tourmap.defaults")
-    app.config.from_pyfile(os.environ.get("CONFIG_PYFILE", "../config.py"))
-
+    app = configure_app(app)
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URL"]
 
     # Static assets...
