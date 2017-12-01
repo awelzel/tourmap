@@ -18,6 +18,7 @@ TEST_CONFIG = {
         "TESTING": True,
         "SECRET_KEY": "TEST",
         "WTF_CSRF_ENABLED": False,
+        "STRAVA_CLIENT_BASE_URL": "http://localhost:3",
 }
 
 
@@ -52,12 +53,13 @@ class TestCase(unittest.TestCase):
         flask.Flask.response_class = cls.flask_response_class
 
     def setUp(self):
+        super().setUp()
         self.app = tourmap.create_app(config=TEST_CONFIG)
+        # Push an app context...
+        self.app.app_context().push()
         self.client = self.app.test_client()
         self.assertIsNotNone(self.app)
 
-        # Push an app context...
-        self.app.app_context().push()
 
         # Wipe all test tables...
         for t in reversed(db.metadata.sorted_tables):
@@ -65,7 +67,11 @@ class TestCase(unittest.TestCase):
         db.session.commit()
 
     def tearDown(self):
+        super().setUp()
         try:
             db.session.rollback()
         except Exception as e:
             logger.warning("rollback in tearDown failed: %s", repr(e))
+
+        # This does not work?
+        # self.app.app_context().pop()

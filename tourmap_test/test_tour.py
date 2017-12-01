@@ -8,15 +8,14 @@ class TourTest(tourmap_test.TestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = User(strava_id=123)
+        self.user = User(strava_id=123, email="tester@strava.com")
         db.session.add(self.user)
         self.tour = Tour(user=self.user, name="Simple Test Tour")
         db.session.add(self.tour)
         db.session.commit()
 
     def tearDown(self):
-        # self.app.app_context().pop()
-        pass
+        super().tearDown()
 
     def test_tours_index(self):
         response = self.client.get("/tours")

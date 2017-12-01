@@ -72,6 +72,7 @@
         <tr>
             {% if user %}
               {% set link = url_for("users.tour", user_hashid=user.hashid, tour_hashid=t.hashid) -%}
+              {% set map_link = url_for("users.tour", user_hashid=user.hashid, tour_hashid=t.hashid) -%}
             {% else %}
               {% set link = url_for("tours.tour", hashid=t.hashid) -%}
             {% endif %}

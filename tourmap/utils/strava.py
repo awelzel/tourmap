@@ -1,8 +1,9 @@
 import logging
 import os
+from urllib.parse import urljoin, urlencode
+
 import requests
 
-from urllib.parse import urljoin, urlencode, urlunparse
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,16 @@ class StravaError(Exception):
     pass
 
 
-class Timeout(StravaError):
+class StravaBadRequest(StravaError):
+
+    def __init__(self, status_code, message, errors):
+        super().__init__(status_code, message, errors)
+        self.status_code = status_code
+        self.message = message
+        self.errors = errors
+
+
+class StravaTimeout(StravaError):
     pass
 
 
@@ -21,10 +31,11 @@ class StravaClient(object):
     DEFAULT_TIMEOUT = (10, 10)
 
     @staticmethod
-    def from_env(environ=os.environ):
+    def from_env(environ=None):
         """
         Use some well known environment variables to initialize the client.
         """
+        environ = environ or os.environ
         client_id = environ["STRAVA_CLIENT_ID"]
         client_secret = environ["STRAVA_CLIENT_SECRET"]
         base_url = environ.get("STRAVA_CLIENT_BASE_URL", StravaClient.BASE_URL)
@@ -50,42 +61,45 @@ class StravaClient(object):
         try:
             response.raise_for_status()
             return response
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            if 400 <= status_code <= 499:
+                try:
+                    data = e.response.json()
+                    raise StravaBadRequest(status_code,
+                                           data.get("message"),
+                                           data.get("errors", []))
+                except ValueError:
+                    pass
+            logger.exception("HTTPError doing request status=%s", status_code)
+            raise StravaError(repr(e) + " --- " + response.text)
         except requests.exceptions.RequestException as e:
             logger.exception("Error doing request...")
             raise StravaError(repr(e) + " --- " + response.text)
 
-    def authorize_redirect_url(self, redirect_uri, state=None):
+    def authorize_redirect_url(self, redirect_uri, scope=None, approval_prompt="auto", state=None):
         """
         Create an URL representing the authorize endpoint on Strava's side.
         """
+        if approval_prompt and approval_prompt not in ["auto", "force"]:
+            raise ValueError("Bad approval_prompt value")
         url = urljoin(self.__base_url, "oauth/authorize")
         args = {
             "client_id": self.__client_id,
             "redirect_uri": redirect_uri,
             "response_type": "code",
-            "approval_prompt": "auto",  # could be force
-            "scope": "view_private",
-            "state": state,
+            "approval_prompt": approval_prompt,
         }
+        if scope:
+            args["scope"] = scope
+        if state:
+            args["state"] = state
+
         return "?".join([url, urlencode(args)])
 
     def exchange_token(self, code):
         """
-        If successful, returns Athlete and token info.
-
-                {'access_token': 'XXXXXXXXXXXXXXXXXXXXXXXXXXX53039e7735974',
-                 'athlete': {'badge_type_id': 0,
-                  'city': 'Hechingen',
-                  'country': 'Germany',
-                  'created_at': '2015-09-04T01:47:39Z',
-                  'email': 'arne.welzel@gmail.com',
-                  'firstname': 'Arne',
-                  'follower': None,
-                  'friend': None,
-                  'id': 11176987,
-                  ...
-                  'username': 'arnewelzel'},
-                 'token_type': 'Bearer'}
+        If successful, returns Strava's athlete and token info as dict.
         """
         response = self._post(
             url="oauth/token",
@@ -97,7 +111,7 @@ class StravaClient(object):
         )
         return response.json()
 
-    def _api_v3_get_auth(self, token, url, *args, **kwargs):
+    def _api_v3_get_auth(self, token, url, **kwargs):
         """
         Helper for an API v3 request.
         """
@@ -118,13 +132,10 @@ class StravaClient(object):
             response.raise_for_status()
             return response.json()
         except requests.exceptions.Timeout as e:
-            raise Timeout()
+            raise StravaTimeout()
         except requests.exceptions.RequestException as e:
             logger.exception("Error doing request...")
             raise StravaError(repr(e) + " --- " + response.text)
-        except Exception as e:
-            print("CRAP", str(e), type(e))
-            raise
 
     def athlete(self, token):
         """

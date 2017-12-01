@@ -54,9 +54,10 @@ class User(db.Model, HashidMixin):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     strava_id = db.Column(db.BigInteger, unique=True, nullable=False)
-    firstname = db.Column(db.String(80), nullable=True)
-    lastname = db.Column(db.String(80), nullable=True)
-    email = db.Column(db.String(120), nullable=True)
+    email = db.Column(db.String(255), nullable=False)
+    firstname = db.Column(db.String(255), nullable=True)
+    lastname = db.Column(db.String(255), nullable=True)
+    country = db.Column(db.String(255), nullable=True)
 
     @property
     def token(self):

@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for, flash
+from flask_login import current_user
 
 from tourmap.views.tours import TourForm
 
@@ -16,6 +17,7 @@ def create_blueprint(app):
 
     @bp.route("/<user_hashid>/tours", methods=["POST"])
     def create_tour(user_hashid):
+        print("X", current_user, current_user.get_id())
         tour_exists_errors = ["A tour with this name already exists."]
         user = database.User.get_by_hashid(user_hashid)
         if user is None:

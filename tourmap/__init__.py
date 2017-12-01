@@ -6,7 +6,10 @@ import click
 from flask import Flask, render_template, abort
 from flask_assets import Environment, Bundle
 
+from flask_login import LoginManager
+
 import tourmap.config
+import tourmap.utils
 
 
 logger = logging.getLogger(__name__)
@@ -17,6 +20,11 @@ def create_app(config=None):
 
     # Load default configuration that is with the application
     app = tourmap.config.configure_app(app, config=config)
+
+    # Login manager stuff...
+    login_manager = LoginManager()
+    login_manager.user_loader(tourmap.utils.user_loader)
+    login_manager.init_app(app)
 
     # Static assets...
     assets = Environment(app)
@@ -44,6 +52,17 @@ def create_app(config=None):
     }
     assets.register(bundles)
 
+
+    # Install a view views...
+    from tourmap.views import strava
+    app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
+    from tourmap.views import users
+    app.register_blueprint(users.create_blueprint(app), url_prefix="/users")
+    from tourmap.views import tours
+    app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
+
+
+    # Support a few more flask commands for convenience...
     @app.cli.command()
     def createdb():
         database.db.metadata.create_all(
@@ -64,7 +83,10 @@ def create_app(config=None):
 
     @app.cli.command()
     def iem():
-        from tourmap.database import Activity, ActivityPhoto, Tour, User
+        from tourmap.database import db
+        from tourmap.models import Activity, ActivityPhoto, Tour, User
+
+        sc = app.extensions["strava_client"]
         import IPython
         IPython.embed()
 
@@ -75,13 +97,5 @@ def create_app(config=None):
     @app.route("/about")
     def about():
         return render_template("about.html")
-
-    # Install a view views...
-    from tourmap.views import strava
-    app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
-    from tourmap.views import users
-    app.register_blueprint(users.create_blueprint(app), url_prefix="/users")
-    from tourmap.views import tours
-    app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
 
     return app
