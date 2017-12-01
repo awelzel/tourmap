@@ -1,6 +1,6 @@
 {# Macro creating a table of activities #}
 {% macro table_activities_summary(activities, truncate_name_len=32) -%}
-<table style="table-layout: auto" class="activities-table table table-striped table-condensed">
+<table class="activities-table table table-striped table-condensed">
     <thead>
         <tr>
         <td>Date</td>
@@ -58,23 +58,26 @@
 
 {# Previously had user to generate a /users/ABCD/tours/EFGH url, but
   we may not want to go that route and instead just do /tours/EFGH #}
-{# {% set link = url_for(".user_tour", user_hashid=user.hashid, tour_hashid=t.hashid) %} #}
-{% macro table_tours(tours) -%}
-<table class="table table-striped table-condensed">
+{% macro table_tours(tours, user=None) -%}
+<table class="tours-table table table-striped table-condensed">
     <thead>
-        <td>Name</td>
-        <td>Link to Map</td>
-        <td>Description</td>
-        <td>Start</td>
-        <td>End</td>
+        <th>Name</th>
+        <th>Map</th>
+        <th>Description</th>
+        <th>Start</th>
+        <th>End</th>
     </thead>
     <tbody>
         {% for t in tours %}
         <tr>
-            {% set link = url_for("tours.tour", hashid=t.hashid) -%}
+            {% if user %}
+              {% set link = url_for("users.tour", user_hashid=user.hashid, tour_hashid=t.hashid) -%}
+            {% else %}
+              {% set link = url_for("tours.tour", hashid=t.hashid) -%}
+            {% endif %}
             <td><a href="{{ link }}">{{ t.name }}</a></td>
             {% set map_link = url_for("tours.tour_map", hashid=t.hashid) -%}
-            <td><a href="{{ map_link }}">{{ map_link }}</a></td>
+            <td><a href="{{ map_link }}">{{ t.hashid }}</a></td>
             <td>{{ t.description or "" }}</td>
             <td>{{ t.start_date_str }}</td>
             <td>{{ t.end_date_str }}</td>

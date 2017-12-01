@@ -1,18 +1,58 @@
-from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for
+from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for, flash
 
-from tourmap.views.tours import TourController
+from tourmap.views.tours import TourForm
 
 from tourmap import database
 
 def create_blueprint(app):
     bp = Blueprint("users", __name__)
 
+    @bp.route("/<user_hashid>/tours/new")
+    def new_tour(user_hashid):
+        user = database.User.get_by_hashid(user_hashid)
+        if user is None:
+            abort(404)
+        return render_template("tours/new.html", form=TourForm(formdata=None), user=user)
+
     @bp.route("/<user_hashid>/tours", methods=["POST"])
     def create_tour(user_hashid):
-        tour = TourController().create(user_hashid, request.form)
-        return redirect(url_for("users.tour", user_hashid=user_hashid,
-                                tour_hashid=tour.hashid), code=303)
+        tour_exists_errors = ["A tour with this name already exists."]
+        user = database.User.get_by_hashid(user_hashid)
+        if user is None:
+            abort(404)
 
+        form = TourForm()
+        if form.validate_on_submit():
+            tour = database.Tour(user=user)
+            form.populate_obj(tour)
+            database.db.session.add(tour)
+            try:
+                database.db.session.commit()
+                return redirect(url_for("users.tour", user_hashid=user_hashid,
+                                        tour_hashid=tour.hashid), code=303)
+            except database.IntegrityError:
+                database.db.session.rollback()
+                form.name.errors = tour_exists_errors
+                form.errors["name"] = form.name.errors
+
+        # We have a user, and maybe a valid tourname, inform the user
+        # if this tour exists already...
+        if not form.name.errors:
+            tour = (database.Tour.query
+                    .filter_by(
+                        user=user,
+                        name=form.name.data
+                    ).one_or_none())
+            if tour:
+                form.name.errors = tour_exists_errors
+                form.errors["name"] = form.name.errors
+
+
+        return render_template("tours/new.html", form=form, user=user)
+
+    @bp.route("/<user_hashid>/tours", methods=["GET"])
+    def tours(user_hashid):
+        return "YO! show me some tours!"
 
     @bp.route("/<user_hashid>/tours/<tour_hashid>")
     def tour(user_hashid, tour_hashid):

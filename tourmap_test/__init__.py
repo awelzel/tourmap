@@ -16,15 +16,21 @@ TEST_CONFIG = {
         "STRAVA_CLIENT_ID": "-1",
         "STRAVA_CLIENT_SECRET": "TEST",
         "TESTING": True,
+        "SECRET_KEY": "TEST",
+        "WTF_CSRF_ENABLED": False,
 }
 
 
 class TestableResponse(flask.wrappers.Response):
 
-    def assert_status_code(self, status_code):
+    def assertStatusCode(self, status_code):
         if self.status_code != status_code:
             msg = "status_code {} != {}".format(self.status_code, status_code)
             raise AssertionError(msg)
+
+    def assertDataContains(self, s):
+        if s not in self.data:
+            raise AssertionError("'{}' not found in data".format(s))
 
 
 class TestCase(unittest.TestCase):
@@ -50,11 +56,16 @@ class TestCase(unittest.TestCase):
         self.client = self.app.test_client()
         self.assertIsNotNone(self.app)
 
+        # Push an app context...
+        self.app.app_context().push()
+
         # Wipe all test tables...
-        with self.app.app_context():
-            for t in reversed(db.metadata.sorted_tables):
-                db.session.execute(t.delete())
-            db.session.commit()
+        for t in reversed(db.metadata.sorted_tables):
+            db.session.execute(t.delete())
+        db.session.commit()
 
     def tearDown(self):
-        pass
+        try:
+            db.session.rollback()
+        except Exception as e:
+            logger.warning("rollback in tearDown failed: %s", repr(e))

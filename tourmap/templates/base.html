@@ -46,6 +46,10 @@
       </div>
     </nav>
     <div class="container-fluid">
+        <!-- <div class="alert alert-warning">
+            {{ get_flashed_messages(with_categories=true) | tojson }}
+        </div>
+        -->
 	<div class="jumbotron">
 	    {% block content %}
 	    {% endblock %}

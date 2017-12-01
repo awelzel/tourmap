@@ -1,22 +1,23 @@
 from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for
 
-
 from tourmap.database import db
 from tourmap.models import User, Tour
 
-class TourController(object):
+from flask_wtf import FlaskForm
+from wtforms import StringField, DateField, TextAreaField
+from wtforms.validators import DataRequired, Optional
 
-    def create(self, user_hashid, data):
-        # Do Flask-WTF if not too complicated...
-        # import IPython
-        # IPython.embed()
-        user = User.get_by_hashid(user_hashid)
-        if user is None:
-            abort(404)
-        tour = Tour(user=user, name="XXX")
-        db.session.add(tour)
-        db.session.commit()
-        return tour
+class TourForm(FlaskForm):
+    name = StringField(
+        label="Name",
+        render_kw={"placeholder": "Name"},
+        validators=[DataRequired()],
+        filters=[lambda data: data.strip() if data else data]  # Strip whitespace!
+    )
+    description = TextAreaField("Description", validators=[Optional()])
+    start_date = DateField("Start Date (optional)", validators=[Optional()])
+    end_date = DateField("End Date (optional)", validators=[Optional()])
+
 
 def create_blueprint(app):
     bp = Blueprint("tours", __name__)
@@ -27,7 +28,6 @@ def create_blueprint(app):
         status_code = 200
         if request.method == "POST":
             tour = TourController().create(request.form)
-
 
         return render_template("tours/index.html", tours=Tour.query.all())
 

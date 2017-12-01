@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'widgets.html' import table_tours %}
+{% from '_widgets.html' import table_tours %}
 {% block title %}All Tours{% endblock title %}
 {% block content %}
 <div class="row">
@@ -7,7 +7,6 @@
         <h3>Tours</h3>
     </div>
     <div class="col-sm-6">
-        <h4>Tours</h4>
         {{ table_tours(tours) }}
     </div>
 </div>

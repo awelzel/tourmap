@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'widgets.html' import table_tours, table_activities_summary %}
+{% from '_widgets.html' import table_tours, table_activities_summary %}
 {% block title %}{{ user.firstname }}{% endblock title %}
 {% block content %}
 <div class="row">
@@ -8,9 +8,14 @@
     </div>
 </div>
 <div class="row">
+    <div class="col-sm-4">
+        <a href="{{ url_for("users.new_tour", user_hashid=user.hashid) }}" class="btn btn-default">New Tour</a>
+    </div>
+</div>
+<div class="row">
     <div class="col-sm-6">
         <h4>Tours</h4>
-        {{ table_tours(tours) }}
+        {{ table_tours(tours, user=user) }}
     </div>
     <div class="col-sm-6">
         <h4>{{ recent_activities | length }} Most Recent Activities</h4>

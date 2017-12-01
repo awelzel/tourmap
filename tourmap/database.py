@@ -10,11 +10,21 @@ import polyline
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.schema import MetaData, UniqueConstraint
 
 
 logger = logging.getLogger(__name__)
 
-db = SQLAlchemy()
+naming_convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+metadata = MetaData(naming_convention=naming_convention)
+
+db = SQLAlchemy(metadata=metadata)
 
 
 class HashidMixin(object):
@@ -71,6 +81,9 @@ class Token(db.Model):
 
 class Tour(db.Model, HashidMixin):
     __tablename__ = "tours"
+    __table_args__ = (
+        UniqueConstraint("user_id", "name"),
+    )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     user = db.relationship(User)
