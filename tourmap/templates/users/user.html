@@ -7,11 +7,13 @@
         <h3>{{ user.firstname }}</h3>
     </div>
 </div>
+{% if user == current_user -%}
 <div class="row">
     <div class="col-sm-4">
-        <a href="{{ url_for("users.new_tour", user_hashid=user.hashid) }}" class="btn btn-default">New Tour</a>
+        <a href="{{ url_for("users.new_tour", user_hashid=user.hashid) }}" class="btn btn-default">Add a new tour</a>
     </div>
 </div>
+{% endif %}
 <div class="row">
     <div class="col-sm-6">
         <h4>Tours</h4>

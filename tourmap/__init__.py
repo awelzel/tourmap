@@ -24,6 +24,7 @@ def create_app(config=None):
     # Login manager stuff...
     login_manager = LoginManager()
     login_manager.user_loader(tourmap.utils.user_loader)
+    login_manager.login_view = "strava.login"
     login_manager.init_app(app)
 
     # Static assets...

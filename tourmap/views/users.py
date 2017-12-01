@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for, flash
-from flask_login import current_user
+from flask_login import current_user, login_required
 
 from tourmap.views.tours import TourForm
 
@@ -9,18 +9,27 @@ def create_blueprint(app):
     bp = Blueprint("users", __name__)
 
     @bp.route("/<user_hashid>/tours/new")
+    @login_required
     def new_tour(user_hashid):
         user = database.User.get_by_hashid(user_hashid)
         if user is None:
             abort(404)
+
+        if user != current_user:
+            abort(403)
+
         return render_template("tours/new.html", form=TourForm(formdata=None), user=user)
 
     @bp.route("/<user_hashid>/tours", methods=["POST"])
+    @login_required
     def create_tour(user_hashid):
         tour_exists_errors = ["A tour with this name already exists."]
         user = database.User.get_by_hashid(user_hashid)
         if user is None:
             abort(404)
+
+        if user != current_user:
+            abort(403)
 
         form = TourForm()
         if form.validate_on_submit():

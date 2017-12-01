@@ -23,6 +23,8 @@ def redirect_back(endpoint, redirect_kwargs=None, **url_for_kwargs):
     return redirect(target, **redirect_kwargs)
 
 
+import flask_login
+
 class UserProxy(object):
     """
     Proxy for use with Flask-Login, so we do not pass around
@@ -35,6 +37,13 @@ class UserProxy(object):
     @property
     def url(self):
         return url_for("users.user", hashid=self.__user.hashid)
+
+    @property
+    def name_str(self):
+        return " ".join(filter(None, [self.__user.firstname, self.__user.lastname]))
+
+    def get_id(self):
+        return self.__user.hashid
 
     @property
     def is_authenticated(self):
@@ -51,8 +60,19 @@ class UserProxy(object):
     def is_anonymous(self):
         return False
 
-    def get_id(self):
-        return self.__user.hashid
+    def __eq__(self, other):
+        from tourmap.models import User
+        """If the other thing has a hashid and looks like a User class, we compare them."""
+
+        if isinstance(other, UserProxy):
+            return self.get_id() == other.get_id()
+        elif isinstance(other, User):
+            return self.__user.hashid == other.hashid
+
+        raise Exception("Bug? {!r} comparison with {!r}".format(self, other))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 def user_loader(hashid):
     from tourmap.models import User
