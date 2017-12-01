@@ -61,6 +61,14 @@ def create_app(config=None):
     from tourmap.views import tours
     app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
 
+    @app.after_request
+    def add_cache_headers(response):
+        # https://stackoverflow.com/a/2068407
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate" # HTTP 1.1.
+        response.headers["Pragma"] = "no-cache" # HTTP 1.0.
+        response.headers["Expires"] = "0" # Proxies.
+        return response
+
 
     # Support a few more flask commands for convenience...
     @app.cli.command()
