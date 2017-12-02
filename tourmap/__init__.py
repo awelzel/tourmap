@@ -99,6 +99,26 @@ def create_app(config=None):
         import IPython
         IPython.embed()
 
+    @app.cli.command()
+    def strava_poller():
+        from tourmap.database import db
+        import tourmap.tasks.strava_poller
+        from tourmap.utils.strava import StravaClient
+
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("parso").setLevel(logging.INFO)
+
+        sc = app.extensions["strava_client"]
+        strava_poller = tourmap.tasks.strava_poller.StravaPoller(
+            session=db.session,
+            strava_client_constructor=lambda: StravaClient.from_env(environ=app.config)
+        )
+        try:
+            strava_poller.run()
+        except Exception as e:
+            logger.exception("StravaPoller failed: %s", e)
+            raise
+
     @app.route("/")
     def index():
         return render_template("index.html")

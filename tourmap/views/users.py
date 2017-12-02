@@ -85,14 +85,10 @@ def create_blueprint(app):
                     # "latlngs": latlngs,
                     # Naive sampling:
                     "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
-                    "photos": [
-                        {
-                            "url": p.url,
-                            "width": p.width,
-                            "height": p.height,
-                        } for p in src.photos],
+                    "photos": src.photos.get_photos(256),
                 }
                 activities.append(a)
+
         return render_template("tours/tour.html",
                                user=user, tour=tour,
                                activities=activities)

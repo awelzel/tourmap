@@ -143,7 +143,7 @@ class StravaClient(object):
         """
         return self._api_v3_get_auth(token, "athlete")
 
-    def activities(self, token, page=None, per_page=None):
+    def activities(self, token, before=None, after=None, page=None, per_page=None):
         """
         List activities of authenticated user
         """
@@ -152,6 +152,10 @@ class StravaClient(object):
             params["page"] = page
         if per_page is not None:
             params["per_page"] = per_page
+        if after is not None:
+            params["after"] = after
+        if before is not None:
+            params["before"] = before
 
         return self._api_v3_get_auth(token, "athlete/activities", params=params)
 

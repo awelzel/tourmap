@@ -18,7 +18,8 @@ TEST_CONFIG = {
         "TESTING": True,
         "SECRET_KEY": "TEST",
         "WTF_CSRF_ENABLED": False,
-        "STRAVA_CLIENT_BASE_URL": "http://localhost:3",
+        "STRAVA_CLIENT_BASE_URL": "http://localhost:33",
+        # "SQLALCHEMY_ECHO": True,
 }
 
 

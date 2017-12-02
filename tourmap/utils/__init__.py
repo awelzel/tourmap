@@ -1,6 +1,7 @@
 """
 Utils.
 """
+import calendar
 from urllib.parse import urlparse, urljoin
 
 from flask import redirect, request, url_for
@@ -77,3 +78,10 @@ class UserProxy(object):
 def user_loader(hashid):
     from tourmap.models import User
     return UserProxy(User.get_by_hashid(hashid))
+
+
+def dt2ts(dt):
+    """
+    Convert a datetime object into a Unix epoch value.
+    """
+    return calendar.timegm(dt.utctimetuple())

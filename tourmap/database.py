@@ -61,7 +61,7 @@ class User(db.Model, HashidMixin):
 
     @property
     def token(self):
-        return self.token_list[0]
+        return self.tokens[0]
 
     @property
     def strava_link(self):
@@ -77,13 +77,13 @@ class Token(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"),
                         unique=True, nullable=False)
     access_token = db.Column(db.String(64), nullable=False)
-    user = db.relationship(User, backref="token_list")
+    user = db.relationship(User, backref="tokens")
 
 
 class Tour(db.Model, HashidMixin):
     __tablename__ = "tours"
     __table_args__ = (
-        UniqueConstraint("user_id", "name"),
+        UniqueConstraint("user_id", "name", name="uq_%(column_0_label)s %(column_1_name)s"),
     )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
@@ -114,6 +114,7 @@ class Tour(db.Model, HashidMixin):
     def end_date_str(self):
         return self.end_date.date().isoformat() if self.end_date is not None else ""
 
+User.tours = db.relationship(Tour, order_by=Tour.id)
 
 class Activity(db.Model):
     """
@@ -145,6 +146,8 @@ class Activity(db.Model):
     end_lat = db.Column(db.Float)
     end_lng = db.Column(db.Float)
     summary_polyline = db.Column(db.Text)
+
+    total_photo_count = db.Column(db.Integer)
 
     user = db.relationship(User)
 
@@ -267,24 +270,6 @@ class Activity(db.Model):
         self.total_elevation_gain = src.get("total_elevation_gain")
         self.average_temp = src.get("average_temp")
 
-
-# XXX: Need photos endpoints
-class ActivityPhoto(db.Model):
-    __tablename__ = "activity_photos"
-    id = db.Column(db.Integer, primary_key=True)
-    strava_unique_id = db.Column(db.String(64), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    activity_id = db.Column(db.Integer, db.ForeignKey("activities.id"), nullable=False)
-    caption = db.Column(db.Text)
-
-    width = db.Column(db.SmallInteger, nullable=False)
-    height = db.Column(db.SmallInteger, nullable=False)
-    url = db.Column(db.String(255), nullable=False)
-
-    user = db.relationship(User)
-    activity = db.relationship(Activity)
-
+        self.total_photo_count = src.get("total_photo_count", 0)
 
 User.activities = db.relationship(Activity, order_by=Activity.start_date_local.desc())
-User.tours = db.relationship(Tour, order_by=Tour.id)
-Activity.photos = db.relationship(ActivityPhoto, order_by=ActivityPhoto.id)

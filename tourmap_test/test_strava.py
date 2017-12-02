@@ -43,12 +43,6 @@ class StravaTest(tourmap_test.TestCase):
         self.strava_client_mock = unittest.mock.Mock(spec=StravaClient)
         self.app.extensions["strava_client"] = self.strava_client_mock
 
-        # self.user = User(strava_id=123)
-        # db.session.add(self.user)
-        # self.tour = Tour(user=self.user, name="Simple Test Tour")
-        # db.session.add(self.tour)
-        # db.session.commit()
-
     def tearDown(self):
         super().tearDown()
 
