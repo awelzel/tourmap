@@ -9,7 +9,7 @@
 </div>
 <div class="row">
     <div class="col-sm-12">
-        <form class="form-horizontal" method="post" action="{{ url_for("users.create_tour", user_hashid=user.hashid) }}">
+        <form class="form-horizontal" method="post" action="{{ url_for("user_tours.create_tour", user_hashid=user.hashid) }}">
             {{ form.csrf_token }}
             {{ bt_render_field(form.name) }}
             {{ bt_render_field(form.description) }}

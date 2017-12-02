@@ -58,7 +58,8 @@ def create_app(config=None):
     from tourmap.views import strava
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
     from tourmap.views import users
-    app.register_blueprint(users.create_blueprint(app), url_prefix="/users")
+    app.register_blueprint(users.create_user_blueprint(app), url_prefix="/users")
+    app.register_blueprint(users.create_user_tours_blueprint(app), url_prefix="/users/<user_hashid>")
     from tourmap.views import tours
     app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
 

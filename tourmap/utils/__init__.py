@@ -41,7 +41,7 @@ class UserProxy(object):
 
     @property
     def name_str(self):
-        return " ".join(filter(None, [self.__user.firstname, self.__user.lastname]))
+        return self.__user.name_str
 
     def get_id(self):
         return self.__user.hashid

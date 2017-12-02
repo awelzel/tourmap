@@ -64,6 +64,10 @@ class User(db.Model, HashidMixin):
         return self.tokens[0]
 
     @property
+    def name_str(self):
+        return " ".join(filter(None, [self.firstname, self.lastname]))
+
+    @property
     def strava_link(self):
         """
         Hackish...

@@ -61,10 +61,10 @@
 {% macro table_tours(tours, include_user_names=True) -%}
 <table class="tours-table table table-striped table-condensed">
     <thead>
-        <th>Name</th>
         {% if include_user_names -%}
         <th>User</th>
         {% endif -%}
+        <th>Name</th>
         <th>Description</th>
         <th>Start</th>
         <th>End</th>
@@ -72,12 +72,12 @@
     <tbody>
         {% for t in tours %}
         <tr>
-          {% set user_link = url_for("users.user", hashid=t.user.hashid) -%}
-          {% set tour_link = url_for("users.tour", user_hashid=t.user.hashid, tour_hashid=t.hashid) -%}
-          <td><a href="{{ tour_link }}">{{ t.name }}</a></td>
           {% if include_user_names -%}
-          <td><a href="{{ user_link }}">{{ t.user.firstname }}</a></td>
+          {% set user_link = url_for("users.user", hashid=t.user.hashid) -%}
+          <td><a href="{{ user_link }}">{{ t.user.name_str }}</a></td>
           {% endif %}
+          {% set tour_link = url_for("user_tours.tour", user_hashid=t.user.hashid, tour_hashid=t.hashid) -%}
+          <td><a href="{{ tour_link }}">{{ t.name }}</a></td>
           <td>{{ t.description or "" }}</td>
           <td>{{ t.start_date_str }}</td>
           <td>{{ t.end_date_str }}</td>

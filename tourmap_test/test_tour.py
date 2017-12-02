@@ -5,14 +5,22 @@ from tourmap.database import db
 
 class TourTest(tourmap_test.TestCase):
 
+    def _get_app_config(self):
+        config = super()._get_app_config()
+        config["LOGIN_DISABLED"] = True
+        return config
+
     def setUp(self):
         super().setUp()
-
         self.user = User(strava_id=123, email="tester@strava.com")
-        db.session.add(self.user)
         self.tour = Tour(user=self.user, name="Simple Test Tour")
-        db.session.add(self.tour)
+        db.session.add_all([self.user, self.tour])
         db.session.commit()
+
+        # Set the user_id into the session. This implies that for each
+        # of the tests, we are logged in...
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = self.user.hashid
 
     def tearDown(self):
         super().tearDown()
@@ -20,6 +28,13 @@ class TourTest(tourmap_test.TestCase):
     def test_tours_index(self):
         response = self.client.get("/tours")
         response.assertStatusCode(200)
+
+    def test_users_tours_get_new_anonymous(self):
+        # Wipe the session!
+        with self.client.session_transaction() as sess:
+            sess.pop("user_id")
+        response = self.client.get("/users/{}/tours/new".format(self.user.hashid))
+        response.assertStatusCode(403)
 
     def test_users_tours_get_new(self):
         response = self.client.get("/users/{}/tours/new".format(self.user.hashid))

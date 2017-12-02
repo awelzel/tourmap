@@ -45,7 +45,7 @@ class TestCase(unittest.TestCase):
             db.drop_all()
             db.create_all()
 
-        # Monkey patch...
+        # Monkey patch the response class to provide some helpers
         cls.flask_response_class = flask.Flask.response_class
         flask.Flask.response_class = TestableResponse
 
@@ -53,9 +53,15 @@ class TestCase(unittest.TestCase):
     def tearDownClass(cls):
         flask.Flask.response_class = cls.flask_response_class
 
+    def _get_app_config(self):
+        return dict(TEST_CONFIG)
+
+    def _create_app(self):
+        return tourmap.create_app(config=self._get_app_config())
+
     def setUp(self):
         super().setUp()
-        self.app = tourmap.create_app(config=TEST_CONFIG)
+        self.app = self._create_app()
         # Push an app context...
         self.app.app_context().push()
         self.client = self.app.test_client()

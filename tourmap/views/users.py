@@ -5,22 +5,41 @@ from tourmap.views.tours import TourForm
 
 from tourmap import database
 
-def create_blueprint(app):
-    bp = Blueprint("users", __name__)
+def create_user_tours_blueprint(app):
+    """
+    A blueprint designated to handle /users/<user_hashid>/tours/ stuff
 
-    @bp.route("/<user_hashid>/tours/new")
+    Note, this needs to be registerd with an url_prefix that contains
+    a single variable part <user_hashid>.
+
+        # Register under url_prefix with variable part...
+        app.register_blueprint(blueprint, url_prefix="/users/<user_hashid>")
+
+    """
+    bp = Blueprint("user_tours", __name__)
+    @bp.record
+    def check_url_prefix(state):
+        """
+        Upon registering this blueprint we check for an url_prefix that
+        contains a <user_hashid> variable. Crash hard otherwise...
+        """
+        if "<user_hashid>" not in state.url_prefix:
+            raise RuntimeError("<user_hashid> not in url_prefix")
+
+    @bp.route("/tours/new")
     @login_required
     def new_tour(user_hashid):
         user = database.User.get_by_hashid(user_hashid)
         if user is None:
             abort(404)
 
+
         if user != current_user:
             abort(403)
 
         return render_template("tours/new.html", form=TourForm(formdata=None), user=user)
 
-    @bp.route("/<user_hashid>/tours", methods=["POST"])
+    @bp.route("/tours", methods=["POST"])
     @login_required
     def create_tour(user_hashid):
         tour_exists_errors = ["A tour with this name already exists."]
@@ -38,7 +57,7 @@ def create_blueprint(app):
             database.db.session.add(tour)
             try:
                 database.db.session.commit()
-                return redirect(url_for("users.tour", user_hashid=user_hashid,
+                return redirect(url_for("user_tours.tour", user_hashid=user_hashid,
                                         tour_hashid=tour.hashid), code=303)
             except database.IntegrityError:
                 database.db.session.rollback()
@@ -60,7 +79,7 @@ def create_blueprint(app):
 
         return render_template("tours/new.html", form=form, user=user)
 
-    @bp.route("/<user_hashid>/tours/<tour_hashid>")
+    @bp.route("/tours/<tour_hashid>")
     def tour(user_hashid, tour_hashid):
         """
         This returns the big map
@@ -92,6 +111,14 @@ def create_blueprint(app):
         return render_template("tours/tour.html",
                                user=user, tour=tour,
                                activities=activities)
+
+    return bp
+
+
+
+
+def create_user_blueprint(app):
+    bp = Blueprint("users", __name__)
 
     @bp.route("/")
     def index():
