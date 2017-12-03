@@ -101,14 +101,12 @@ def create_app(config=None):
         IPython.embed()
 
     @app.cli.command()
-    def strava_poller():
+    @click.option("--loglevel", default="info")
+    def strava_poller(loglevel):
         from tourmap.database import db
         import tourmap.tasks.strava_poller
         from tourmap.utils.strava import StravaClient
-
-        logging.basicConfig(level=logging.DEBUG)
-        logging.getLogger("parso").setLevel(logging.INFO)
-
+        logging.basicConfig(level=getattr(logging, loglevel.upper()))
         sc = app.extensions["strava_client"]
         strava_poller = tourmap.tasks.strava_poller.StravaPoller(
             session=db.session,

@@ -38,14 +38,15 @@ class StravaPoller(object):
             with all defaults...
         """
         self.__session = session
-        self.__executor = executor or ThreadPoolExecutor()
+        self.__executor = executor or ThreadPoolExecutor(max_workers=4)  # !!!
         self.__result_futures = {}
         self.__strava_client_constructor = strava_client_constructor
         self.__client_pool = queue.Queue()
         self.__per_page_default = per_page_default
 
         # How often do we want to run the latest check?
-        self.__latest_interval_seconds = 5
+        # XXX: Make these configurable!
+        self.__latest_interval_seconds = 5 * 60
         self.__latest_lookback_seconds = 0
         self.__latest_lookback_days = 14
         self.__latest_lookback_per_page = 50
@@ -53,8 +54,8 @@ class StravaPoller(object):
     def _sleep(self):
         logger.debug("Sleep...")
         # XXX: We should either sleep until the executor finished a job,
-        #      or a maximum time has exceeded...
-        time.sleep(0.5)
+        #      or a maximum time has elapesd...
+        time.sleep(5.0)
 
     def _now(self):
         return datetime.datetime.utcnow()
@@ -79,8 +80,7 @@ class StravaPoller(object):
                     self.__client = self.__constructor()
                 return self.__client
 
-            def __exit__(self, *args, **kwargs):
-                print("__exit__", repr(args), repr(kwargs))
+            def __exit__(self, exc_type, exc_value, traceback):
                 self.__pool.put(self.__client)
 
         return ClientManager(self.__client_pool, self.__strava_client_constructor)
@@ -215,6 +215,7 @@ class StravaPoller(object):
 
     def run(self):
         with self.__executor as executor:
+            logger.info("Running...")
             self._run(executor)
 
     def _run(self, executor):
@@ -276,11 +277,11 @@ class StravaPoller(object):
              days? But then we do not know when to stop, I guess...
         """
         result_activities = []
-        logger.debug("FULL FETCH MODE for %s %s", user, token)
-
         # Pages start at!
         page = poll_state.full_fetch_next_page or 1
         per_page = poll_state.full_fetch_per_page or self.__per_page_default
+        logger.info("Full fetch: for %s %s / page=%d", user, token, page)
+
         activities = list(client.activities(
             token=token.access_token,
             page=page,
@@ -305,9 +306,9 @@ class StravaPoller(object):
 
     def _latest_fetch(self, client, user, token, poll_state):
         """
-        Fetch the past X days...
+        Fetch the past X days and update everything.
         """
-        logger.debug("LATEST FETCH MODE for %s %s", user, token)
+        logger.info("Latest fetch: %s %s", user, token)
         result_activities = []
         now = self._now()
         last_fetch_completed_at = poll_state.last_fetch_completed_at or now
@@ -339,7 +340,8 @@ class StravaPoller(object):
                            "per_page=%s len(activities)=%s",
                            self.__latest_lookback_per_page, len(activities))
 
-        logger.debug("Got %s activities", len(activities))
+        if len(activities) > 0:
+            logger.info("%s: Got %s new activities (%s)", user, len(activities))
         for a in self._activity_resource_state_filter(activities):
             result_photos = self._fetch_photos_for_activity(client, token, a)
             result_activities.append({
