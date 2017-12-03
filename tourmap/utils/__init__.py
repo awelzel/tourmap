@@ -12,16 +12,20 @@ from flask import redirect, request, url_for
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
-    return test_url.scheme in ('http', 'https') and \
-           ref_url.netloc == test_url.netloc
+    if test_url.scheme not in ("http", "https"):
+        return False
+    return ref_url.netloc == test_url.netloc
 
-def redirect_back(endpoint, redirect_kwargs=None, **url_for_kwargs):
-    target = request.form.get("next")
-    if not target or not is_safe_url(target):
-        target = url_for(endpoint, **url_for_kwargs)
-
+def redirect_back(default_endpoint, next_candidate=None, redirect_kwargs=None,
+                  **url_for_kwargs):
     redirect_kwargs = redirect_kwargs or {}
-    return redirect(target, **redirect_kwargs)
+
+    for candidate in [next_candidate, request.args.get("next")]:
+        if candidate and is_safe_url(candidate):
+            return redirect(candidate, **redirect_kwargs)
+
+    return redirect(url_for(default_endpoint, **url_for_kwargs), **redirect_kwargs)
+
 
 
 import flask_login

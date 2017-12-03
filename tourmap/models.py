@@ -1,9 +1,16 @@
 import json
 
 from tourmap.database import db
-from tourmap.database import Activity, Token, Tour, User  # Should move them over!
+from tourmap.database import Activity, Tour, User  # Should move them over!
 from sqlalchemy.schema import Index
 
+class Token(db.Model):
+    __tablename__ = "tokens"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"),
+                        unique=True, nullable=False)
+    access_token = db.Column(db.String(64), nullable=False)
+    user = db.relationship(User, backref=db.backref("token", uselist=False))
 
 
 class PollState(db.Model):
@@ -15,7 +22,7 @@ class PollState(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"),
                         unique=True, nullable=False)
-    user = db.relationship(User, backref="poll_states")
+    user = db.relationship(User, backref=db.backref("poll_state", uselist=False))
 
     # If the user deletes activities while a full fetch is in progress,
     # we may miss some... Lets ignore for now and allow to trigger refetching.

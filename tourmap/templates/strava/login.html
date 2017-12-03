@@ -15,7 +15,7 @@
         <p>
             But, don't worry - that's next to no one.
         </p>
-        <a href="{{ url_for("strava.authorize") }}">
+        <a href="{{ url_for("strava.authorize", next=request.args.get("next")) }}">
             <img alt="Login with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
         </a>
     </div>

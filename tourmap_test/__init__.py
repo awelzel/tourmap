@@ -32,7 +32,35 @@ class TestableResponse(flask.wrappers.Response):
 
     def assertDataContains(self, s):
         if s not in self.data:
-            raise AssertionError("'{}' not found in data".format(s))
+            raise AssertionError("{!r} not found in data".format(s))
+
+    def assertNotDataContains(self, s):
+        if s in self.data:
+            raise AssertionError("{!r} found in data".format(s))
+
+    def assertIsRedirect(self, code=None, location_contains=None):
+        if code is not None:
+            self.assertStatusCode(code)
+        else:
+            if not 300 <= self.status_code <= 310:
+                msg = "{!r} is not a redirect code".format(self.status_code)
+                raise AssertionError(msg)
+
+        if "Location" not in  self.headers:
+            raise AssertionError("No Location header present")
+        location = self.headers["Location"]
+        if location_contains and location_contains not in location:
+            raise AssertionError("{!r} not found in Location {!r}",
+                                 location_contains, location)
+
+    def followRedirect(self, client, *args, **kwargs):
+        """
+        Assert this response is a redirect and do a GET request to it.
+
+        :returns: response of the next location...
+        """
+        self.assertIsRedirect()
+        return client.get(self.headers["Location"], *args, **kwargs)
 
 
 class TestCase(unittest.TestCase):

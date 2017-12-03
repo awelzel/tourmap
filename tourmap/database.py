@@ -60,10 +60,6 @@ class User(db.Model, HashidMixin):
     country = db.Column(db.String(255), nullable=True)
 
     @property
-    def token(self):
-        return self.tokens[0]
-
-    @property
     def name_str(self):
         return " ".join(filter(None, [self.firstname, self.lastname]))
 
@@ -73,15 +69,6 @@ class User(db.Model, HashidMixin):
         Hackish...
         """
         return "https://www.strava.com/athletes/{}".format(self.strava_id)
-
-
-class Token(db.Model):
-    __tablename__ = "tokens"
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"),
-                        unique=True, nullable=False)
-    access_token = db.Column(db.String(64), nullable=False)
-    user = db.relationship(User, backref="tokens")
 
 
 class Tour(db.Model, HashidMixin):
