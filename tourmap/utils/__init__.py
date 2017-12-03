@@ -4,6 +4,7 @@ Utils.
 import calendar
 from urllib.parse import urlparse, urljoin
 
+from dateutil.relativedelta import relativedelta
 from flask import redirect, request, url_for
 
 # is_safe_url should check if the url is safe for redirects.
@@ -35,7 +36,7 @@ class UserProxy(object):
     Proxy for use with Flask-Login, so we do not pass around
     sqlalchemy model objects and do funny stuff with it.
     """
-    def __init__(self, user, authenticated=True):
+    def __init__(self, user):
         self.__user = user
         self.__authenticated = True
 
@@ -66,8 +67,10 @@ class UserProxy(object):
         return False
 
     def __eq__(self, other):
+        """
+        If the other thing is a user class, we compare them based on the hashids.
+        """
         from tourmap.models import User
-        """If the other thing has a hashid and looks like a User class, we compare them."""
 
         if isinstance(other, UserProxy):
             return self.get_id() == other.get_id()
@@ -89,3 +92,12 @@ def dt2ts(dt):
     Convert a datetime object into a Unix epoch value.
     """
     return calendar.timegm(dt.utctimetuple())
+
+
+def seconds_to_readable_interval(seconds):
+    rd = relativedelta(seconds=seconds)
+
+    result = "{:02}:{:02}".format(rd.minutes, rd.seconds)
+    if rd.hours > 0:
+        result = "{}:{}".format(rd.hours, result)
+    return result

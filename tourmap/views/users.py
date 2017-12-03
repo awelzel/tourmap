@@ -4,6 +4,7 @@ from flask_login import current_user, login_required
 from tourmap.views.tours import TourForm
 
 from tourmap import database
+from tourmap.models import User, Tour, Activity
 
 def create_user_tours_blueprint(app):
     """
@@ -29,7 +30,7 @@ def create_user_tours_blueprint(app):
     @bp.route("/tours/new")
     @login_required
     def new_tour(user_hashid):
-        user = database.User.get_by_hashid(user_hashid)
+        user = User.get_by_hashid(user_hashid)
         if user is None:
             abort(404)
 
@@ -43,7 +44,7 @@ def create_user_tours_blueprint(app):
     @login_required
     def create_tour(user_hashid):
         tour_exists_errors = ["A tour with this name already exists."]
-        user = database.User.get_by_hashid(user_hashid)
+        user = User.get_by_hashid(user_hashid)
         if user is None:
             abort(404)
 
@@ -52,7 +53,7 @@ def create_user_tours_blueprint(app):
 
         form = TourForm()
         if form.validate_on_submit():
-            tour = database.Tour(user=user)
+            tour = Tour(user=user)
             form.populate_obj(tour)
             database.db.session.add(tour)
             try:
@@ -67,11 +68,9 @@ def create_user_tours_blueprint(app):
         # We have a user, and maybe a valid tourname, inform the user
         # if this tour exists already...
         if not form.name.errors:
-            tour = (database.Tour.query
-                    .filter_by(
-                        user=user,
-                        name=form.name.data
-                    ).one_or_none())
+            tour = (Tour.query
+                    .filter_by(user=user,name=form.name.data)
+                    .one_or_none())
             if tour:
                 form.name.errors = tour_exists_errors
                 form.errors["name"] = form.name.errors
@@ -84,8 +83,8 @@ def create_user_tours_blueprint(app):
         """
         This returns the big map, visible for anyone.
         """
-        user = database.User.get_by_hashid(user_hashid)
-        tour = database.Tour.get_by_hashid(tour_hashid)
+        user = User.get_by_hashid(user_hashid)
+        tour = Tour.get_by_hashid(tour_hashid)
 
         if user is None or tour is None or tour.user.id != user.id:
             abort(404)
@@ -116,8 +115,8 @@ def create_user_tours_blueprint(app):
         not support them anyhow. Further, we redirect to the users
         page for no good reason but to make it simpler...
         """
-        user = database.User.get_by_hashid(user_hashid)
-        tour = database.Tour.get_by_hashid(tour_hashid)
+        user = User.get_by_hashid(user_hashid)
+        tour = Tour.get_by_hashid(tour_hashid)
         if user is None or tour is None or tour.user.id != user.id:
             abort(404)
 
@@ -140,20 +139,18 @@ def create_user_blueprint(app):
     @bp.route("/")
     def index():
         return render_template("users/index.html",
-                               users=database.User.query.all())
+                               users=User.query.all())
 
     @bp.route("/<user_hashid>")
     def user(user_hashid):
-        user = database.User.get_by_hashid(user_hashid)
-        limit = int(request.args.get("limit", 13))
+        user = User.get_by_hashid(user_hashid)
         if user is None:
-            app.logger.warning("Failed user lookup")
             abort(404)
 
-        recent_activities = (database.Activity.query
+        recent_activities = (Activity.query
                              .filter_by(user=user)
-                             .order_by(database.Activity.start_date.desc())
-                             .limit(limit)
+                             .order_by(Activity.start_date.desc())
+                             .limit(8)
                              .all())
         return render_template("users/user.html",
                                user=user, tours=user.tours,
@@ -161,7 +158,14 @@ def create_user_blueprint(app):
 
     @bp.route("/<user_hashid>/activities")
     def user_activities(user_hashid):
-        user = database.User.get_by_hashid(user_hashid)
+        user = User.get_by_hashid(user_hashid)
+        if user is None:
+            abort(404)
+
+        if user != current_user:
+            abort(403)
+
+        user = User.get_by_hashid(user_hashid)
         return render_template("users/activities.html",
                                user=user,
                                activities=user.activities)

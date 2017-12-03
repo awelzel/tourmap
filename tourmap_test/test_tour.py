@@ -12,19 +12,13 @@ class TestTour(tourmap_test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.user1 = User(strava_id=123, email="first@strava.com")
-        self.user2 = User(strava_id=124, email="second@strava.com")
-        self.tour1 = Tour(user=self.user1, name="Simple Test Tour")
-        db.session.add_all([self.user1, self.tour1])
+        db.session.add_all([self.user1, self.user2, self.tour1])
         db.session.commit()
 
         # Set the user_id into the session. This implies that for each
         # of the tests, we are logged in...
         with self.client.session_transaction() as sess:
             sess["user_id"] = self.user1.hashid
-
-    def tearDown(self):
-        super().tearDown()
 
     def test_tours_index(self):
         response = self.client.get("/tours")
@@ -166,11 +160,10 @@ class TestTour(tourmap_test.TestCase):
         self.assertFalse(Tour.query.count())
 
     def test_delete_tour_of_wrong_user(self):
-        tour2 = Tour(user=self.user2, name="Belongs to user2")
-        db.session.add(tour2)
+        db.session.add(self.tour2)
         db.session.commit()
 
-        url = "/users/{}/tours/{}/delete".format(self.user2.hashid, tour2.hashid)
+        url = "/users/{}/tours/{}/delete".format(self.user2.hashid, self.tour2.hashid)
         response = self.client.post(url)
         response.assertStatusCode(403)
 

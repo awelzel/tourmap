@@ -1,14 +1,12 @@
 import random
 import uuid
+import unittest.mock
+
+from tourmap.models import User, Tour
+from tourmap.utils.strava import StravaClient, StravaBadRequest
 
 import tourmap_test
 
-from tourmap.models import User, Tour
-import tourmap.views.strava
-from tourmap.database import db
-from tourmap.utils.strava import StravaClient, StravaBadRequest
-
-import unittest.mock
 
 class StravaTest(tourmap_test.TestCase):
 
@@ -48,9 +46,6 @@ class StravaTest(tourmap_test.TestCase):
         assert "strava_client" in self.app.extensions
         self.strava_client_mock = unittest.mock.Mock(spec=StravaClient)
         self.app.extensions["strava_client"] = self.strava_client_mock
-
-    def tearDown(self):
-        super().tearDown()
 
     def test_strava_callback_no_code(self):
         query_string = {
@@ -112,11 +107,13 @@ class StravaTest(tourmap_test.TestCase):
         self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
+        response.assertIsRedirect(302, "/users/")
 
         self.assertEqual(1, Tour.query.count())
         tour = Tour.query.first()
+        self.assertEqual("All Activities", tour.name)
         user = User.query.first()
-        self.assertEqual(user, tour.user)
+        self.assertEqual(user.id, tour.user_id)
 
     def test_strava_callback__honors_next_in_state(self):
         query_string = {

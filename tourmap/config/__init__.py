@@ -39,5 +39,3 @@ def configure_app(app, config=None):
     database.db.init_app(app)
 
     return app
-
-

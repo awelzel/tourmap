@@ -3,22 +3,20 @@
 {% block content %}
 <h3>Login with Strava</h3>
 <div class="row">
-    <div class="col-sm-12">
-        <p>
-            Are you a Strava user?
-        </p>
-        <p>
-            Clicking on below button will authorize <em>{{ config.APP_NAME }}</em> to access all your Strava data.
-        <p>
-            This also means that anyone that knows about <em>{{ config.APP_NAME }}</em> can see your activities here.
-        </p>
-        <p>
-            But, don't worry - that's next to no one.
-        </p>
-        <a href="{{ url_for("strava.authorize", next=request.args.get("next")) }}">
-            <img alt="Login with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
-        </a>
-    </div>
-</div>
+  <div class="col-sm-12">
+    <p>
+      Clicking on the button below will authorize <em>{{ config.APP_NAME }}</em>
+      to access all your Strava data.
+    <p>
+      This also means that anyone who knows about <em>{{ config.APP_NAME }}</em>
+      can see all of your tours and their corresponding activities here.
+    </p>
+    <p>
+      But, don't worry - next to no one knows about <em>{{config.APP_NAME }}</em>.
+    </p>
+    <a href="{{ url_for("strava.authorize", next=request.args.get("next")) }}">
+      <img alt="Login with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
+    </a>
+  </div>
 </div>
 {% endblock %}

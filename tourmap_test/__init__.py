@@ -1,3 +1,4 @@
+import datetime
 import logging
 import unittest
 
@@ -6,6 +7,7 @@ import flask.wrappers
 
 
 import tourmap
+from tourmap.models import User, Activity, Tour
 from tourmap.database import db
 
 logger = logging.getLogger(__name__)
@@ -100,6 +102,47 @@ class TestCase(unittest.TestCase):
         for t in reversed(db.metadata.sorted_tables):
             db.session.execute(t.delete())
         db.session.commit()
+
+        # For reuse in tests, but not added to the db
+        self.user1 = User(strava_id=123, email="first@strava.com")
+        self.tour1 = Tour(user=self.user1, name="User1 Test Tour")
+        self.user2 = User(strava_id=124, email="second@strava.com")
+        self.tour2 = Tour(user=self.user2, name="User2 Test Tour")
+        self.start_date1 = datetime.datetime(2017, 10, 18, 8, 30)
+        self.start_date_local1 = datetime.datetime(2017, 10, 18, 10, 30)
+        self.utc_offset1 = 7200
+        self.moving_time1 = 3621
+        self.elapsed_time1 = 5912
+        self.activity1 = Activity(
+            user=self.user1,
+            strava_id=4321,
+            type="Ride",
+            name="Activity 1 of User 1",
+            start_date=self.start_date1,
+            start_date_local=self.start_date_local1,
+            moving_time=self.moving_time1,
+            elapsed_time=self.elapsed_time1,
+            utc_offset=self.utc_offset1,
+            summary_polyline="qpxtBkg}tQBhI_kArMka@kQshBbA_}AlZc`Boi@"
+        )
+
+        self.start_date2 = datetime.datetime(2016, 9, 26, 19, 27)
+        self.start_date_local2 = datetime.datetime(2016, 9, 26, 15, 27)
+        self.utc_offset2 = -14400
+        self.moving_time2 = 9011
+        self.elapsed_time2 = 10221
+        self.activity2 = Activity(
+            user=self.user2,
+            strava_id=54321,
+            type="Ride",
+            name="Activity 2 of User 2",
+            start_date=self.start_date2,
+            start_date_local=self.start_date_local2,
+            moving_time=self.moving_time2,
+            elapsed_time=self.elapsed_time2,
+            utc_offset=self.utc_offset2,
+            summary_polyline="ui}qBwhwtQc]gOcGuP{HaEsXvHsXaP{n@oFygAcW"
+        )
 
     def tearDown(self):
         super().setUp()

@@ -33,6 +33,16 @@ class ObjectPool(object):
                 self.__pool.put_nowait(_PlaceHolder)
 
     def get(self, block=True, timeout=None):
+        """
+        Get an instance from this pool, optionally constructing one
+        if the pool is empty and maxsize has not been reached yet.
+
+        :param block: as for queue.Queue. Note, a pool with an unset
+                      maxsize never blocks. It will always construct
+                      a new object for you.
+        :param timeout: How long to wait in the case of an empty pool.
+                        None will wait forever.
+        """
         return self._get(block=block, timeout=timeout)
 
     def put(self, obj):
@@ -67,16 +77,6 @@ class ObjectPool(object):
         return self.__pool.qsize()
 
     def _get(self, block=True, timeout=None):
-        """
-        Get an instance from this pool, optionally constructing one
-        if the pool is empty and maxsize has not been reached yet.
-
-        :param block: as for queue.Queue. Note, a pool with an unset
-                      maxsize never blocks. It will always construct
-                      a new object for you.
-        :param timeout: How long to wait in the case of an empty pool.
-                        None will wait forever.
-        """
         try:
             obj = self.__pool.get_nowait()
             # We are allowed to create a new instance if the pool

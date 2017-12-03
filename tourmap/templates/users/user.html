@@ -23,7 +23,10 @@
     <div>
       {{ table_activities_summary(recent_activities) }}
     </div>
-    <h4><a href="{{ url_for(".user_activities", user_hashid=user.hashid) }}">See all...</a></h4>
+    {% if user == current_user -%}
+    {% set all_activities_link = url_for(".user_activities", user_hashid=user.hashid) %}
+    <h4><a href="{{ all_activities_link }}">See all...</a></h4>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
