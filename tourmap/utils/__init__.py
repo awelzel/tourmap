@@ -33,11 +33,16 @@ class UserProxy(object):
         self.__authenticated = True
 
     @property
+    def url(self):
+        return url_for("users.user", hashid=self.__user.hashid)
+
+    @property
     def is_authenticated(self):
         """
         Could we add some timing stuff here?
         """
         return self.__authenticated
+
     @property
     def is_active(self):
         return True

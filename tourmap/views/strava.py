@@ -7,7 +7,7 @@ from urllib.parse import urlunparse
 
 import dateutil.parser
 from flask import Blueprint, redirect, request, url_for, render_template, abort, current_app, flash
-from flask_login import login_user
+import flask_login
 
 import tourmap.utils
 import tourmap.utils.strava
@@ -22,41 +22,49 @@ def create_blueprint(app):
     __strava_client = tourmap.utils.strava.StravaClient.from_env(environ=app.config)
     app.extensions["strava_client"] = __strava_client
 
-    @bp.route("/connect")
-    def connect():
+    @bp.route("/login")
+    def login():
         """
         Just the Connect with Strava template.
         """
-        return render_template("strava/connect.html")
+        return render_template("strava/login.html")
+
+    @bp.route("/logout")
+    def logout():
+        """
+        Do a logout.
+        """
+        flask_login.logout_user()
+        return redirect(url_for("index"))
 
     @bp.route("/callback")
     def callback():
         """
         XXX: Needs some serious error checking!
         XXX: This should really be a controller and not in a view...
+        XXX: The strava client is not thread safe!
         """
         strava_client = current_app.extensions["strava_client"]
-
 
         if "error" in request.args:
             msg = "Connect with Strava failed: {!r}".format(request.args["error"])
             current_app.logger.warning(msg)
             flash(msg, category="error")
-            return redirect(url_for("strava.connect"))
+            return redirect(url_for("strava.login"))
 
         state = request.args.get("state")
         if not state or state.lower() not in ["connect"]:
             msg = "Connect with Strava failed (state was {!r})".format(state)
             current_app.logger.warning(msg)
             flash(msg, category="error")
-            return redirect(url_for("strava.connect"))
+            return redirect(url_for("strava.login"))
         try:
             result = strava_client.exchange_token(request.args["code"])
         except tourmap.utils.strava.StravaBadRequest as e:
             msg = "Connect with Strava failed: {!r}".format(e.errors)
             current_app.logger.error(msg)
             flash(msg, category="error")
-            return redirect(url_for("strava.connect"))
+            return redirect(url_for("strava.login"))
 
         athlete = result["athlete"]
 
@@ -102,7 +110,8 @@ def create_blueprint(app):
 
         # At this point we can be somewhat sure the user has a Strava
         # account and that is good enough for us to log him in.
-        login_user(tourmap.utils.UserProxy(user))
+        current_app.logger.info("%s just logged in!", user)
+        flask_login.login_user(tourmap.utils.UserProxy(user))
 
         if new_user:
             flash("Successfully connected with Strava. Thanks!", category="success")

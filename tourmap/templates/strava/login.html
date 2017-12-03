@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Connect with Strava{% endblock %}
+{% block title %}Login with Strava{% endblock %}
 {% block content %}
-<h3>Connect with Strava</h3>
+<h3>Login with Strava</h3>
 <div class="row">
     <div class="col-sm-12">
         <p>
@@ -16,7 +16,7 @@
             But, don't worry - that's next to no one.
         </p>
         <a href="{{ url_for("strava.authorize") }}">
-            <img alt="Connect with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
+            <img alt="Login with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
         </a>
     </div>
 </div>

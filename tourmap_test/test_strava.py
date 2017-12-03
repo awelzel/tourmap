@@ -15,20 +15,21 @@ class StravaTest(tourmap_test.TestCase):
         self.oauth_token_response_error = {
             "message":"Bad Request",
         }
+        self.oauth_strava_id = 999999999999
         self.oauth_token_response_ok = {
             'access_token': 'e4805618ba385b97c22b0055c45deb40f80bc39a',
             'token_type': 'Bearer',
             'athlete': {
                 "friend": None,
                 "resource_state": 2,
-                "firstname": "Arne",
+                "firstname": "FirstTest",
                 "email": "no.spam@gmail.com",
                 "sex": "M",
                 "follower": None,
                 "updated_at": "2017-11-29T17:13:12Z",
-                "lastname": "NoSpam",
-                "username": "nospam",
-                "id": 11176987,
+                "lastname": "LastTest",
+                "username": "testuser",
+                "id": self.oauth_strava_id,
                 "premium": False,
                 "country": "Germany",
                 "profile_medium": "https://dgalywyr863hv.cloudfront.net/pictures/athletes/11176987/4136348/3/medium.jpg",
@@ -68,6 +69,19 @@ class StravaTest(tourmap_test.TestCase):
         self.strava_client_mock.exchange_token(code)
         response = self.client.get("/strava/callback", query_string=query_string)
         response.assertStatusCode(302)
+
+        self.assertEqual(1, User.query.count())
+        user = User.query.first()
+        self.assertEqual(self.oauth_strava_id, user.strava_id)
+        self.assertEqual("FirstTest", user.firstname)
+        self.assertEqual("LastTest", user.lastname)
+        self.assertEqual("Germany", user.country)
+
+        # Follow the redirect and check if flash is there...
+        response = self.client.get(response.headers["Location"])
+        response.assertStatusCode(200)
+        response.assertDataContains(b"Successfully connected with Strava")
+
 
     def test_strava_callback_strava_returns_error(self):
         code = "da39a3ee5e6b4b0d3255bfef95601890afd80709"

@@ -2,11 +2,9 @@
 {% from '_widgets.html' import table_tours %}
 {% block title %}All Tours{% endblock title %}
 {% block content %}
+<h3>All Tours</h3>
 <div class="row">
-    <div class="col-sm-4">
-        <h3>Tours</h3>
-    </div>
-    <div class="col-sm-6">
+    <div class="col-sm-12">
         {{ table_tours(tours) }}
     </div>
 </div>

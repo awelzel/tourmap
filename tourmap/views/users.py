@@ -17,7 +17,6 @@ def create_blueprint(app):
 
     @bp.route("/<user_hashid>/tours", methods=["POST"])
     def create_tour(user_hashid):
-        print("X", current_user, current_user.get_id())
         tour_exists_errors = ["A tour with this name already exists."]
         user = database.User.get_by_hashid(user_hashid)
         if user is None:
@@ -52,12 +51,11 @@ def create_blueprint(app):
 
         return render_template("tours/new.html", form=form, user=user)
 
-    @bp.route("/<user_hashid>/tours", methods=["GET"])
-    def tours(user_hashid):
-        return "YO! show me some tours!"
-
     @bp.route("/<user_hashid>/tours/<tour_hashid>")
     def tour(user_hashid, tour_hashid):
+        """
+        This returns the big map
+        """
         user = database.User.get_by_hashid(user_hashid)
         tour = database.Tour.get_by_hashid(tour_hashid)
 
@@ -68,7 +66,27 @@ def create_blueprint(app):
             app.logger.warning("Got request for mismatched user/tour")
             abort(404)
 
-        return render_template("tours/tour.html", user=user, tour=tour)
+        activities = []
+        for src in tour.activities:
+            latlngs = list(src.latlngs)
+            if latlngs:
+                a = {
+                    "name": src.name,  # MAKE HTML SAFE!
+                    "date": src.start_date_local.date().isoformat(),
+                    # "latlngs": latlngs,
+                    # Naive sampling:
+                    "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
+                    "photos": [
+                        {
+                            "url": p.url,
+                            "width": p.width,
+                            "height": p.height,
+                        } for p in src.photos],
+                }
+                activities.append(a)
+        return render_template("tours/tour.html",
+                               user=user, tour=tour,
+                               activities=activities)
 
     @bp.route("/")
     def index():

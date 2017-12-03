@@ -15,7 +15,7 @@
 <div class="row">
     <div class="col-sm-6">
         <h4>Tours</h4>
-        {{ table_tours(tours, user=user) }}
+        {{ table_tours(tours, include_user_names=False) }}
     </div>
     <div class="col-sm-6">
         <h4>{{ recent_activities | length }} Most Recent Activities</h4>

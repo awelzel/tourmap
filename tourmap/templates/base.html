@@ -28,18 +28,24 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li><a href="{{ url_for("index") }}">Home</a></li>
-            <li><a href="{{ url_for("users.index") }}">Users</a></li>
-            <li><a href="{{ url_for("tours.index") }}">Tours</a></li>
-            {# <li><a href="{{ url_for("tours.new") }}">New Tour</a></li> #}
-            <li><a href="{{ url_for("strava.connect") }}">Connect with Strava</a></li>
+            <li><a href="{{ url_for("index") }}">About</a></li>
+            <li><a href="{{ url_for("users.index") }}">All Users</a></li>
+            <li><a href="{{ url_for("tours.index") }}">All Tours</a></li>
+            {% if current_user.is_authenticated -%}
+            <li><a href="{{ current_user.url }}">Your Stuff</a></li>
+            {% endif %}
           </ul>
           <ul class="nav navbar-nav navbar-right">
-            <!-- <li><a href="{{ url_for("about") }}">About</a></li> -->
+            {% if current_user.is_authenticated -%}
+            <li><a href="{{ url_for("strava.logout") }}">Logout</a></li>
+            {% else %}
+            <li><a href="{{ url_for("strava.login") }}">Login with Strava</a></li>
+            {% endif %}
             <li>
                 <a href="https://www.strava.com" target="_blank">
                     <img alt="Powered by Strava" height="25px" src="{{ url_for("static", filename="strava/api_logo_pwrdBy_strava_horiz_light.png")}}">
                 </a>
+            </li>
             </li>
           </ul>
         </div>
