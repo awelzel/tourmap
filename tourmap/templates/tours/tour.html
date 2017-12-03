@@ -57,14 +57,11 @@
                     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
                     maxZoom: 18, }).addTo(map); */
 
-
-        var photo_columns = 2;
-
-        var maxImgWidth = 0;
-        function createPopupElementForActivity(a) {
+        function createPopupElementForActivity(a, photoColumns, photoFactor) {
+            var maxImgWidth = 0;
             var popupRoot = document.createElement("div");
             $(popupRoot).addClass("activity-popup");
-            var popupTitle = document.createElement("h4");
+            var popupTitle = document.createElement("h5");
             $(popupTitle).text(a["name"])
             $(popupRoot).append(popupTitle);
 
@@ -82,7 +79,7 @@
             var imgTr = null;
             var i = 0;
             a["photos"].forEach(function(p) {
-                if (i % photo_columns == 0) {
+                if (i % photoColumns == 0) {
                     imgTr = document.createElement("tr");
                     $(imgTbody).append(imgTr);
                 }
@@ -92,17 +89,17 @@
                 var img = document.createElement("img");
                 $(imgTd).append(img);
                 img.setAttribute("data-url", p["url"]);
-                img.setAttribute("width", p["width"]);
-                img.setAttribute("height", p["height"]);
+                img.setAttribute("width", parseInt(p["width"] * photoFactor));
+                img.setAttribute("height", parseInt(p["height"] * photoFactor));
 
-                maxImgWidth = Math.max(maxImgWidth, p["width"]);
+                maxImgWidth = Math.max(maxImgWidth, parseInt(p["width"] * photoFactor));
                 i++;
             });
 
 
             $(popupRoot).append(imgTable);
 
-            popupRoot.setAttribute("width", maxImgWidth * 2);
+            popupRoot.setAttribute("width", maxImgWidth * photoColumns);
 
             return popupRoot;
         }
@@ -146,7 +143,18 @@
                 var latlngs = a["latlngs"];
                 marker = L.marker(latlngs[latlngs.length - 1]);
                 markers.push(marker);
-                var content = createPopupElementForActivity(a);
+
+                // Ugly hack to downsize the photos and popups on small screens.
+                if ($(window).width() > 600) {
+                    var photoColumns = 2;
+                    var photoFactor = 1.0;
+                } else {
+                    var photoColumns = 1;
+                    var photoFactor = 0.5;
+                }
+
+
+                var content = createPopupElementForActivity(a, photoColumns, photoFactor);
                 var popupWidth = content.getAttribute("width");
                 var popup = L.popup({minWidth: popupWidth, maxWidth: popupWidth});
                 popup.setContent(content);
