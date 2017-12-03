@@ -40,7 +40,7 @@ class LoginController(object):
             tour = Tour(
                 user=user,
                 name="All Activities",
-                description="Automatically created tour."
+                description="Automatically created tour to display all activities on a single map."
             )
             new_user = True
 
@@ -150,7 +150,7 @@ def create_blueprint(app):
 
         if new_user:
             flash("Successfully connected with Strava. Thanks!", category="success")
-            flash("Fetching your activities in the background, "
+            flash("Fetching your activities in the background now, "
                   "just refresh this page until they show up ;-)", category="info")
 
         # Not sure this is working properly... If we got here through a
@@ -159,7 +159,7 @@ def create_blueprint(app):
             return tourmap.utils.redirect_back(
                 default_endpoint="users.user",
                 next_candidate=state_dict.get("next"),
-                hashid=user.hashid
+                user_hashid=user.hashid
             )
         except Exception as e:
             current_app.logger.exception("Redirect exception... %s", e)
@@ -216,4 +216,5 @@ def create_blueprint(app):
             cleaned_activities.append(ca)
 
         return render_template("strava/activities.html", user=user, activities=cleaned_activities)
+
     return bp

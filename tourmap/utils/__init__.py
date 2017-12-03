@@ -41,7 +41,7 @@ class UserProxy(object):
 
     @property
     def url(self):
-        return url_for("users.user", hashid=self.__user.hashid)
+        return url_for("users.user", user_hashid=self.__user.hashid)
 
     @property
     def name_str(self):

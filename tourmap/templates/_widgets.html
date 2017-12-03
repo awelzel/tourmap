@@ -56,24 +56,28 @@
 {%- endmacro %}
 
 
-{# Previously had user to generate a /users/ABCD/tours/EFGH url, but
-  we may not want to go that route and instead just do /tours/EFGH #}
-{% macro table_tours(tours, include_user_names=True) -%}
+
+{# Table of tours... #}
+{% macro table_tours(tours, for_user=False) -%}
 <table class="tours-table table table-striped table-condensed">
     <thead>
-        {% if include_user_names -%}
+        {% if not for_user -%}
         <th>User</th>
         {% endif -%}
         <th>Name</th>
         <th>Description</th>
-        <th>Start</th>
-        <th>End</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        {% if for_user -%}
+        <th>Operations</th>
+        {% endif -%}
+
     </thead>
     <tbody>
         {% for t in tours %}
         <tr>
-          {% if include_user_names -%}
-          {% set user_link = url_for("users.user", hashid=t.user.hashid) -%}
+          {% if not for_user -%}
+          {% set user_link = url_for("users.user", user_hashid=t.user.hashid) -%}
           <td><a href="{{ user_link }}">{{ t.user.name_str }}</a></td>
           {% endif %}
           {% set tour_link = url_for("user_tours.tour", user_hashid=t.user.hashid, tour_hashid=t.hashid) -%}
@@ -81,6 +85,16 @@
           <td>{{ t.description or "" }}</td>
           <td>{{ t.start_date_str }}</td>
           <td>{{ t.end_date_str }}</td>
+          {% if for_user -%}
+          {% set del_link = url_for("user_tours.delete", user_hashid=t.user.hashid, tour_hashid=t.hashid) -%}
+          <td>
+            <form method="POST" action="{{ del_link }}">
+              <button type="submit" onclick="return confirm('Sure?')" class="btn btn-warning">
+                Delete
+              </button>
+            </form>
+          </td>
+          {% endif -%}
         </tr>
         {% endfor %}
     </tbody>

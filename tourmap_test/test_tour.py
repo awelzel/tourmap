@@ -3,7 +3,7 @@ import tourmap_test
 from tourmap.models import User, Tour
 from tourmap.database import db
 
-class TourTest(tourmap_test.TestCase):
+class TestTour(tourmap_test.TestCase):
 
     def _get_app_config(self):
         config = super()._get_app_config()
@@ -12,15 +12,16 @@ class TourTest(tourmap_test.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.user = User(strava_id=123, email="tester@strava.com")
-        self.tour = Tour(user=self.user, name="Simple Test Tour")
-        db.session.add_all([self.user, self.tour])
+        self.user1 = User(strava_id=123, email="first@strava.com")
+        self.user2 = User(strava_id=124, email="second@strava.com")
+        self.tour1 = Tour(user=self.user1, name="Simple Test Tour")
+        db.session.add_all([self.user1, self.tour1])
         db.session.commit()
 
         # Set the user_id into the session. This implies that for each
         # of the tests, we are logged in...
         with self.client.session_transaction() as sess:
-            sess["user_id"] = self.user.hashid
+            sess["user_id"] = self.user1.hashid
 
     def tearDown(self):
         super().tearDown()
@@ -33,11 +34,11 @@ class TourTest(tourmap_test.TestCase):
         # Wipe the session!
         with self.client.session_transaction() as sess:
             sess.pop("user_id")
-        response = self.client.get("/users/{}/tours/new".format(self.user.hashid))
+        response = self.client.get("/users/{}/tours/new".format(self.user1.hashid))
         response.assertStatusCode(403)
 
     def test_users_tours_get_new(self):
-        response = self.client.get("/users/{}/tours/new".format(self.user.hashid))
+        response = self.client.get("/users/{}/tours/new".format(self.user1.hashid))
         response.assertStatusCode(200)
 
     def test_users_create_tour_ok(self):
@@ -47,7 +48,7 @@ class TourTest(tourmap_test.TestCase):
             "end_date": "2017-12-24",
             "description": "Small description about this tour.",
         }
-        url = "/users/{}/tours".format(self.user.hashid)
+        url = "/users/{}/tours".format(self.user1.hashid)
 
         # Check that POST-REDIRECT-GET works properly.
         response = self.client.post(url, data=form)
@@ -62,7 +63,7 @@ class TourTest(tourmap_test.TestCase):
         self.assertEqual(2, len(Tour.query.all()))
         tour = Tour.get_by_hashid(tour_hashid)
         self.assertEqual("Another test tour", tour.name)
-        self.assertEqual(self.user.id, tour.user_id)
+        self.assertEqual(self.user1.id, tour.user_id)
         self.assertEqual("2017-11-30", tour.start_date_str)
         self.assertEqual("2017-12-24", tour.end_date_str)
 
@@ -70,7 +71,7 @@ class TourTest(tourmap_test.TestCase):
         form = {
             "name": "TOUR_NAME",
         }
-        url = "/users/{}/tours".format(self.user.hashid)
+        url = "/users/{}/tours".format(self.user1.hashid)
 
         response = self.client.post(url, data=form)
         response.assertStatusCode(303)
@@ -86,7 +87,7 @@ class TourTest(tourmap_test.TestCase):
         form = {
             "name": "TOUR_NAME",
         }
-        url = "/users/{}/tours".format(self.user.hashid)
+        url = "/users/{}/tours".format(self.user1.hashid)
 
         response = self.client.post(url, data=form)
         response.assertStatusCode(303)
@@ -107,7 +108,7 @@ class TourTest(tourmap_test.TestCase):
         form = {
             "name": "TOUR_NAME",
         }
-        url = "/users/{}/tours".format(self.user.hashid)
+        url = "/users/{}/tours".format(self.user1.hashid)
 
         response = self.client.post(url, data=form)
         response.assertStatusCode(303)
@@ -128,7 +129,7 @@ class TourTest(tourmap_test.TestCase):
             "start_date": "2017-11-30",
             "end_date": "2017-12-24",
         }
-        url = "/users/{}/tours".format(self.user.hashid)
+        url = "/users/{}/tours".format(self.user1.hashid)
         # other support: query_string, or file-like object
         response = self.client.post(url, data=form)
         response.assertStatusCode(200)
@@ -142,10 +143,35 @@ class TourTest(tourmap_test.TestCase):
             "start_date": "TEST",
             "end_date": "TEST",
         }
-        url = "/users/{}/tours".format(self.user.hashid)
+        url = "/users/{}/tours".format(self.user1.hashid)
         # other support: query_string, or file-like object
         response = self.client.post(url, data=form)
         response.assertStatusCode(200)
 
         # No new object!
         self.assertEqual(1, len(Tour.query.all()))
+
+    def test_delete_tour_http_delete(self):
+        url = "/users/{}/tours/{}/delete".format(self.user1.hashid, self.tour1.hashid)
+        response = self.client.post(url)
+        response.assertIsRedirect(302, "/users/{}".format(self.user1.hashid))
+
+    def test_delete_tour_http_delete_twice(self):
+        url = "/users/{}/tours/{}/delete".format(self.user1.hashid, self.tour1.hashid)
+        response = self.client.post(url)
+        response.assertIsRedirect(302, "/users/{}".format(self.user1.hashid))
+        response = self.client.post(url)
+        response.assertStatusCode(404)
+
+        self.assertFalse(Tour.query.count())
+
+    def test_delete_tour_of_wrong_user(self):
+        tour2 = Tour(user=self.user2, name="Belongs to user2")
+        db.session.add(tour2)
+        db.session.commit()
+
+        url = "/users/{}/tours/{}/delete".format(self.user2.hashid, tour2.hashid)
+        response = self.client.post(url)
+        response.assertStatusCode(403)
+
+        self.assertEqual(2, Tour.query.count())

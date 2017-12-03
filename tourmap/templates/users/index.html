@@ -14,8 +14,8 @@
             <tbody>
                 {% for u in users -%}
                 <tr>
-                    {% set link = url_for(".user", hashid=u.hashid) -%}
-                    <td><a href="{{ link }}">{{ u.firstname}} {{ u.lastname }}</a></td>
+                    {% set link = url_for(".user", user_hashid=u.hashid) -%}
+                    <td><a href="{{ link }}">{{ u.name_str or u.hashid }}</a></td>
                     <td><a href="{{ u.strava_link }}" target="_blank">{{ u.strava_id }}</a></td>
                 </tr>
                 {%- endfor %}
