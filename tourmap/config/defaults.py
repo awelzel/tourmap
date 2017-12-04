@@ -16,5 +16,3 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # For environment checks???
 HEROKU = False
-
-MAPBOX_ACCESS_TOKEN = None

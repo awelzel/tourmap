@@ -27,7 +27,8 @@ TEST_CONFIG = {
         "SECRET_KEY": "TEST",
         "WTF_CSRF_ENABLED": False,
         "STRAVA_CLIENT_BASE_URL": "http://localhost:33",
-        "SQLALCHEMY_ECHO": str2bool(os.environ.get("SQLALCHEMY_ECHO", "false"))
+        "SQLALCHEMY_ECHO": str2bool(os.environ.get("SQLALCHEMY_ECHO", "false")),
+        "MAPBOX_ACCESS_TOKEN": "MAPBOXTESTTOKEN",
 }
 
 
