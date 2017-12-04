@@ -5,7 +5,7 @@ import hashids
 import polyline
 from sqlalchemy.schema import Index, UniqueConstraint
 
-from tourmap.database import db
+from tourmap.resources import db
 from tourmap.utils import seconds_to_readable_interval
 
 
@@ -179,21 +179,21 @@ class Activity(db.Model):
         """
         Update from a dict as provided by the Strava API with condition checks
         """
-        if src.get("external_id") and self.external_id != src.get("external_id"):
-            self.external_id = src["external_id"]
+        assert self.strava_id == src["id"], (
+            "Wrong activity?! {} != {}".format(self.strava_id, src["id"])
+        )
+        self.external_id = src["external_id"]
+        self.type = src["type"]
+        self.name = src.get("name", "")
 
-        if self.type != src["type"]:
-            self.type = src["type"]
 
-        if not self.name or self.name != src["name"]:
-            self.name = src.get("name", "")
-
+        # Unify this to a single method!
         start_date = dateutil.parser.parse(src["start_date"])
-        if start_date.tzinfo is not None and start_date.utcoffset().seconds != 0:
-            raise Exception("Non UTC date parsed! {!r}".format(src["start_date"]))
+        if start_date.tzinfo is not None:
+            if start_date.utcoffset().seconds != 0:
+                raise Exception("Non UTC date parsed! {!r}".format(src["start_date"]))
         start_date = start_date.replace(tzinfo=None)
-        if self.start_date is None or self.start_date != start_date:
-            self.start_date = start_date
+        self.start_date = start_date
 
         start_date_local = dateutil.parser.parse(src["start_date_local"])
         if start_date_local.tzinfo is not None:
@@ -202,20 +202,15 @@ class Activity(db.Model):
                 raise Exception(msg)
 
         start_date_local = start_date_local.replace(tzinfo=None)
-        if self.start_date_local is None or self.start_date_local != start_date_local:
-            self.start_date_local = start_date_local
+        self.start_date_local = start_date_local
 
-        if self.utc_offset is None or self.utc_offset != int(src["utc_offset"]):
-            self.utc_offset = int(src["utc_offset"])
-
-        if src.get("timezone") and self.timezone != src["timezone"]:
-            self.timezone = src["timezone"]
+        self.utc_offset = int(src["utc_offset"])
+        self.timezone = src["timezone"]
 
         summary_polyline = src.get("map", {}).get("summary_polyline")
-        if summary_polyline and self.summary_polyline != summary_polyline:
-            self.summary_polyline = summpary_polyline
+        self.summary_polyline = summary_polyline
 
-        # XXX: No check for changes here...
+        # XXX: We should probably just do a loop...
         start_latlng = src.get("start_latlng", [None, None])
         end_latlng = src.get("end_latlng", [None, None])
         self.start_lat, self.start_lng = start_latlng[0], start_latlng[1]

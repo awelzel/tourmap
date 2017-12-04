@@ -1,6 +1,6 @@
 import tourmap_test
 
-from tourmap.database import db
+from tourmap.resources import db
 
 class TestTour(tourmap_test.TestCase):
 

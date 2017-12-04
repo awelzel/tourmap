@@ -35,8 +35,8 @@ def configure_app(app, config=None):
 
     # SQLAlchemy configuration...
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URL"]
-    from tourmap import database
-    database.db.init_app(app)
+    from tourmap.resources import db
+    db.init_app(app)
 
     # StravaClient configuration
     from tourmap.resources import strava

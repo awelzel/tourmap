@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for
 
-from tourmap.database import db
-from tourmap.models import User, Tour
+from tourmap.models import Tour
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, TextAreaField
@@ -38,19 +37,9 @@ def create_blueprint(app):
     # We want to match /tours as well, so strict_slashes=False is required.
     @bp.route("/", strict_slashes=False)
     def index():
-        status_code = 200
-        if request.method == "POST":
-            tour = TourController().create(request.form)
-
+        """
+        XXX: This will break when there are many many tours.
+        """
         return render_template("tours/index.html", tours=Tour.query.all())
-
-
-    @bp.route("/<hashid>")
-    def tour(hashid):
-        tour = Tour.get_by_hashid(hashid)
-        if tour is None:
-            current_app.logger.info("Not found: %s", hashid)
-            abort(404)
-        return render_template("tours/tour.html", user=tour.user, tour=tour)
 
     return bp

@@ -1,5 +1,8 @@
 import datetime
+import json
 import logging
+import os
+import os.path
 import unittest
 
 import flask
@@ -8,7 +11,8 @@ import flask.wrappers
 
 import tourmap
 from tourmap.models import User, Activity, Tour
-from tourmap.database import db
+from tourmap.resources import db
+from tourmap.utils import str2bool
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +25,7 @@ TEST_CONFIG = {
         "SECRET_KEY": "TEST",
         "WTF_CSRF_ENABLED": False,
         "STRAVA_CLIENT_BASE_URL": "http://localhost:33",
-        # "SQLALCHEMY_ECHO": True,
+        "SQLALCHEMY_ECHO": str2bool(os.environ.get("SQLALCHEMY_ECHO", "false"))
 }
 
 
@@ -151,5 +155,11 @@ class TestCase(unittest.TestCase):
         except Exception as e:
             logger.warning("rollback in tearDown failed: %s", repr(e))
 
-        # This does not work?
-        # self.app.app_context().pop()
+    def load_test_data(self, basename, ext):
+        filename = os.path.extsep.join([basename, ext])
+        path = os.path.join(__path__[0], "data", filename)
+        return open(path, "r")
+
+    def get_test_data_from_json_file(self, basename):
+        with self.load_test_data(basename, "json") as fp:
+            return json.load(fp)

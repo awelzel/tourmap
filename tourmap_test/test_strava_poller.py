@@ -1,16 +1,17 @@
 import datetime
+import unittest.mock
 import uuid
 
 import tourmap_test
 from tourmap.models import User, Tour, PollState, Token
 import tourmap.views.strava
-from tourmap.database import db
+from tourmap.resources import db
 from tourmap.utils.strava import StravaClient, StravaBadRequest
 from tourmap.utils import dt2ts
+from tourmap.utils.objpool import ObjectPool
 
 from tourmap.tasks.strava_poller import StravaPoller
 
-import unittest.mock
 
 class StravaPollerTest(tourmap_test.TestCase):
 
@@ -28,12 +29,8 @@ class StravaPollerTest(tourmap_test.TestCase):
         self.session.add_all([self.user, self.buser, self.cuser, self.token, self.tour, self.poll_state])
         self.session.commit()
 
-        def sc_constructor():
-            return self.strava_client_mock
-        self.strava_poller = StravaPoller(db.session, sc_constructor)
-
-    def tearDown(self):
-        super().tearDown()
+        self.strava_client_pool = ObjectPool(lambda: self.strava_client_mock)
+        self.strava_poller = StravaPoller(self.session, self.strava_client_pool)
 
     def test_get_states__no_states_in_db(self):
         self.session.delete(self.poll_state)
@@ -45,12 +42,6 @@ class StravaPollerTest(tourmap_test.TestCase):
     def test_get_poll_states__single_state(self):
         states = list(self.strava_poller._get_poll_states())
         self.assertEqual(1, len(states))
-
-
-    # def test_get_poll_states__exclude_submitted_states(self):
-    #    self.strava_poller._add_submitted_state(self.poll_state)
-    #    states = list(self.strava_poller._get_poll_states())
-    #    self.assertEqual(0, len(states))
 
     def test_get_poll_states__full_fetch_completed_states(self):
         poll_state1 = PollState(user=self.buser, full_fetch_completed=True)

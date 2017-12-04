@@ -101,3 +101,15 @@ def seconds_to_readable_interval(seconds):
     if rd.hours > 0:
         result = "{}:{}".format(rd.hours, result)
     return result
+
+
+def str2bool(s):
+    """
+    Convert a string to a bool.
+
+    :returns: True if the string is either one of 1, true or yes, else False
+    """
+    assert isinstance(s, str), "{!r} not a string?".format(s)
+    if s.strip().lower() in ["1", "true", "yes"]:
+        return True
+    return False

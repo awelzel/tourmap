@@ -5,6 +5,7 @@ from tourmap.views.tours import TourForm
 
 from tourmap import database
 from tourmap.models import User, Tour, Activity
+from tourmap.resources import db
 
 def create_user_tours_blueprint(app):
     """
@@ -55,13 +56,13 @@ def create_user_tours_blueprint(app):
         if form.validate_on_submit():
             tour = Tour(user=user)
             form.populate_obj(tour)
-            database.db.session.add(tour)
+            db.session.add(tour)
             try:
-                database.db.session.commit()
+                db.session.commit()
                 return redirect(url_for("user_tours.tour", user_hashid=user_hashid,
                                         tour_hashid=tour.hashid), code=303)
             except database.IntegrityError:
-                database.db.session.rollback()
+                db.session.rollback()
                 form.name.errors = tour_exists_errors
                 form.errors["name"] = form.name.errors
 
@@ -123,8 +124,8 @@ def create_user_tours_blueprint(app):
         if user != current_user:
             abort(403)
 
-        database.db.session.delete(tour)
-        database.db.session.commit()
+        db.session.delete(tour)
+        db.session.commit()
 
         return redirect(url_for("users.user", user_hashid=user.hashid))
 

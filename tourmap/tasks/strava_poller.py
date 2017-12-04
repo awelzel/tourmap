@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class StravaPoller(object):
 
-    def __init__(self, session, strava_client_constructor,
+    def __init__(self, session, strava_client_pool,
                  per_page_default=4, executor=None):
         """
         :param session: SQLAlchemy session
@@ -40,8 +40,7 @@ class StravaPoller(object):
         self.__session = session
         self.__executor = executor or ThreadPoolExecutor(max_workers=4)  # !!!
         self.__result_futures = {}
-        self.__strava_client_constructor = strava_client_constructor
-        self.__client_pool = queue.Queue()
+        self.__strava_client_pool = strava_client_pool
         self.__per_page_default = per_page_default
 
         # How often do we want to run the latest check?
@@ -54,7 +53,8 @@ class StravaPoller(object):
     def _sleep(self):
         logger.debug("Sleep...")
         # XXX: We should either sleep until the executor finished a job,
-        #      or a maximum time has elapesd...
+        #      or a maximum time has elapesd. Maybe have an event queue
+        #      that the master can sleep on?
         time.sleep(5.0)
 
     def _now(self):
@@ -65,25 +65,6 @@ class StravaPoller(object):
 
     def _get_submitted_ids(self):
         return list(self.__result_futures.keys())
-
-    def _get_strava_client(self):
-        class ClientManager(object):
-            def __init__(self, pool, constructor):
-                self.__pool = pool
-                self.__constructor = constructor
-                self.__client = None
-
-            def __enter__(self):
-                try:
-                    self.__client = self.__pool.get_nowait()
-                except queue.Empty:
-                    self.__client = self.__constructor()
-                return self.__client
-
-            def __exit__(self, exc_type, exc_value, traceback):
-                self.__pool.put(self.__client)
-
-        return ClientManager(self.__client_pool, self.__strava_client_constructor)
 
     def _get_poll_states(self):
         """
@@ -369,5 +350,5 @@ class StravaPoller(object):
         """
         :returns: list results with { "activity": {strava}, "activity_photos": {strava}
         """
-        with self._get_strava_client() as client:
+        with self.__strava_client_pool.use() as client:
             return self._fetch_activities(client, user, token, poll_state)

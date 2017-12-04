@@ -34,7 +34,6 @@ class StravaClient(object):
         # Register teardown function
         app.teardown_appcontext(self.teardown)
 
-
     def teardown(self, exception):
         ctx = stack.top
         if ctx is not None and hasattr(ctx, "strava_client"):
@@ -49,6 +48,14 @@ class StravaClient(object):
         ctx = stack.top
         if ctx is not None:
             if not hasattr(ctx, 'strava_client'):
-                state = current_app.extensions["strava_client"]
-                ctx.strava_client = state.pool.get()
+                ctx.strava_client = self._pool.get()
             return ctx.strava_client
+
+    @property
+    def _pool(self):
+        """
+        Return a refernce to the object pool used by the extension.
+        """
+        assert "strava_client" in current_app.extensions, (
+            "Looks like the flask_strava extension was not initialized.")
+        return current_app.extensions["strava_client"].pool

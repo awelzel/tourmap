@@ -9,23 +9,20 @@ import flask_login
 
 import tourmap.utils
 import tourmap.utils.strava
-from tourmap.database import db
 from tourmap import database
 from tourmap import resources
 from tourmap.models import User, PollState, Token, Tour
 
 class LoginController(object):
     """
+    Handle the result of a strava.exchange_token() call.
     """
     def __init__(self, session=None):
-        self.__session = session or db.session
+        self.__session = session or resources.db.session
 
     def strava_login(self, data):
         """
-        Given data from a strava token exchange, either update and return
-        an existing user, or create a new one and return that.
-
-        XXX: This is a mess!
+        Given data from a Strava token exchange, either update or create a new.
 
         :param data: as returned by a token exchange from Strava.
         :returns: tuple representing (new_user, user)
@@ -34,17 +31,16 @@ class LoginController(object):
         new_user = False
         tour = None
         user = User.query.filter_by(strava_id=athlete["id"]).one_or_none()
+
         if user is None:
+            new_user = True
             user = User(strava_id=athlete["id"])
             tour = Tour(
                 user=user,
                 name="All Activities",
                 description="Automatically created tour to display all activities on a single map."
             )
-            new_user = True
 
-        # Update this user object, should check for changes, actually
-        # to not needlessly do DB commits?
         user.email = athlete.get("email")
         user.firstname = athlete.get("firstname"),
         user.lastname = athlete.get("lastname")
@@ -53,7 +49,7 @@ class LoginController(object):
         self.__session.add_all(filter(None, [user, tour]))
         self.__session.commit()
 
-        # Create or update the token if neede.
+        # Create or update the token if needed...
         token = Token.query.filter_by(user=user).one_or_none()
         if token is None:
             token = Token(user=user)
@@ -80,7 +76,7 @@ class LoginController(object):
             # same account at the same time. But than he can just
             # retry...
             current_app.logger.exception("User %s: %s", user, e)
-            db.session.rollback()
+            self.__.session.rollback()
             abort(500)
 
         return new_user, user

@@ -63,6 +63,13 @@ def create_app(config=None):
     from tourmap.views import tours
     app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
 
+    @app.route("/")
+    def index():
+        return render_template("index.html")
+
+    @app.route("/about")
+    def about():
+        return render_template("about.html")
     @app.after_request
     def add_cache_headers(response):
         # https://stackoverflow.com/a/2068407
@@ -72,58 +79,42 @@ def create_app(config=None):
         return response
 
 
-    # Support a few more flask commands for convenience...
+    # Support a few more flask commands
     @app.cli.command()
     def createdb():
-        database.db.metadata.create_all(
+        from tourmap.resources import db
+        db.metadata.create_all(
             bind=database.db.engine,
             checkfirst=True
         )
 
     @app.cli.command()
-    @click.argument("user_id", type=click.INT)
-    def sync_activities(user_id):
-        from tourmap import tasks
-        tasks.sync_activities(user_id, environ=app.config)
-
-    @app.cli.command()
     def resetdb():
-        database.db.drop_all()
-        database.db.create_all()
+        from tourmap.resources import db
+        db.drop_all()
+        db.create_all()
 
     @app.cli.command()
     def iem():
-        from tourmap.database import db
-        from tourmap.models import Activity, ActivityPhoto, Tour, User
-
-        sc = app.extensions["strava_client"]
+        from tourmap.resources import db, strava
+        from tourmap.models import Activity, ActivityPhotos, Tour, User
         import IPython
         IPython.embed()
 
     @app.cli.command()
     @click.option("--loglevel", default="info")
     def strava_poller(loglevel):
-        from tourmap.database import db
-        import tourmap.tasks.strava_poller
-        from tourmap.utils.strava import StravaClient
+        from tourmap.resources import db, strava
+        from tourmap.tasks import strava_poller
         logging.basicConfig(level=getattr(logging, loglevel.upper()))
-        sc = app.extensions["strava_client"]
-        strava_poller = tourmap.tasks.strava_poller.StravaPoller(
+        strava_poller = strava_poller.StravaPoller(
             session=db.session,
-            strava_client_constructor=lambda: StravaClient.from_env(environ=app.config)
+            strava_client_pool=strava._pool,
         )
         try:
             strava_poller.run()
         except Exception as e:
             logger.exception("StravaPoller failed: %s", e)
             raise
-
-    @app.route("/")
-    def index():
-        return render_template("index.html")
-
-    @app.route("/about")
-    def about():
-        return render_template("about.html")
 
     return app
