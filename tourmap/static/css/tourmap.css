@@ -1,17 +1,16 @@
 /* For navbar to work properly... */
 body {
-  padding-top: 70px;
+  padding-top: 60px;
   min-height: 1000px;
 }
 
 h3 {
     margin-top: 10px;
     font-size: 20px;
-
 }
 
 .jumbotron {
-    padding-top: 10px;
+    padding-top: 5px;
 }
 
 .photos-table {
@@ -45,15 +44,18 @@ table.activities-table>tbody>tr>td {
 }
 
 #fullscreen {
-  width: 95%;
-  height: 95%; */
+  width: 98vw;
+  height: 98vh;
   position: absolute;
   margin: auto;
   display: none;
   left:0; top:0; right:0; bottom:0;
 
 }
+
 #fullscreen-img {
+    display: block;
+    margin: 0 auto;
     max-height: 100%;
     max-width: 100%;
 }
