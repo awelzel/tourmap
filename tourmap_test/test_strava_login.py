@@ -5,6 +5,8 @@ import unittest.mock
 from tourmap.models import User, Tour
 from tourmap.utils.strava import StravaClient, StravaBadRequest
 
+import tourmap.flask_strava as flask_strava
+
 import tourmap_test
 
 
@@ -45,7 +47,10 @@ class StravaTest(tourmap_test.TestCase):
         }
         assert "strava_client" in self.app.extensions
         self.strava_client_mock = unittest.mock.Mock(spec=StravaClient)
-        self.app.extensions["strava_client"] = self.strava_client_mock
+        # Patch the extension so it returns the Mock object to us.
+        self.app.extensions["strava_client"] = flask_strava.StravaState(
+            cfn=lambda: self.strava_client_mock
+        )
 
     def test_strava_callback_no_code(self):
         query_string = {

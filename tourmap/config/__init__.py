@@ -38,4 +38,8 @@ def configure_app(app, config=None):
     from tourmap import database
     database.db.init_app(app)
 
+    # StravaClient configuration
+    from tourmap.resources import strava
+    strava.init_app(app)
+
     return app

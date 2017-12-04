@@ -1,7 +1,5 @@
 """
 Strava OAUTH flow hacked together.
-
-XXX: the manual strava_client  extensions hack sucks.
 """
 from urllib.parse import urlunparse, urlencode, parse_qsl
 
@@ -13,6 +11,7 @@ import tourmap.utils
 import tourmap.utils.strava
 from tourmap.database import db
 from tourmap import database
+from tourmap import resources
 from tourmap.models import User, PollState, Token, Tour
 
 class LoginController(object):
@@ -90,11 +89,6 @@ class LoginController(object):
 def create_blueprint(app):
     bp = Blueprint("strava", __name__)
 
-    # XXX: This works only with a single thread or bad stuff might happen.
-    # Check Flask-Plugins and pooling...
-    __strava_client = tourmap.utils.strava.StravaClient.from_env(environ=app.config)
-    app.extensions["strava_client"] = __strava_client
-
     @bp.route("/login")
     def login():
         """
@@ -113,12 +107,9 @@ def create_blueprint(app):
     @bp.route("/callback")
     def callback():
         """
-        XXX: Needs some serious error checking!
-        XXX: This should really be a controller and not in a view...
-        XXX: The strava client is not thread safe!
+        Handle a callback representing a user coming back
+        from the Strava page to here.
         """
-        strava_client = current_app.extensions["strava_client"]
-
         if "error" in request.args:
             msg = "Connect with Strava failed: {!r}".format(request.args["error"])
             current_app.logger.warning(msg)
@@ -134,7 +125,7 @@ def create_blueprint(app):
             return redirect(url_for("strava.login"))
 
         try:
-            data = strava_client.exchange_token(request.args["code"])
+            data = resources.strava.client.exchange_token(request.args["code"])
         except tourmap.utils.strava.StravaBadRequest as e:
             msg = "Connect with Strava failed: {!r}".format(e.errors)
             current_app.logger.error(msg)
@@ -175,7 +166,6 @@ def create_blueprint(app):
         # XXX: This may break behind a proxy, or maybe not?
         components = (request.scheme, request.host, url_for("strava.callback"), None, None, None)
         redirect_uri = urlunparse(components)
-        strava_client = current_app.extensions["strava_client"]
 
         state = {
             "state": "CONNECT",
@@ -183,7 +173,7 @@ def create_blueprint(app):
         if request.args.get("next"):
             state["next"] = request.args.get("next")
 
-        return redirect(strava_client.authorize_redirect_url(
+        return redirect(resources.strava.client.authorize_redirect_url(
             redirect_uri=redirect_uri,
             scope=None,
             state=urlencode(state),
@@ -200,8 +190,10 @@ def create_blueprint(app):
         page = int(request.args.get("page")) if "page" in request.args else None
 
         try:
-            strava_client = current_app.extensions["strava_client"]
-            activities = strava_client.activities(token=token.access_token, page=page)
+            activities = resources.strava.client.activities(
+                token=token.access_token,
+                page=page
+            )
         except tourmap.utils.strava.StravaTimeout:
             app.logger.warning("Strava timeout...")
             abort(504)
