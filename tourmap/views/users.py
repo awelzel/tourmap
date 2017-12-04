@@ -92,10 +92,14 @@ def create_user_tours_blueprint(app):
         if user is None or tour is None or tour.user.id != user.id:
             abort(404)
 
-        activities = TourController().activities_for_map(user, tour)
+        ctrl = TourController()
+        prepared_activities = ctrl.prepare_activities_for_map(tour)
+        map_settings = ctrl.get_map_settings(tour, prepared_activities)
+
         return render_template("tours/tour.html",
                                user=user, tour=tour,
-                               activities=activities)
+                               activities=prepared_activities,
+                               map_settings=map_settings)
 
     @bp.route("/tours/<tour_hashid>/delete", methods=["POST"])
     @login_required
@@ -119,8 +123,6 @@ def create_user_tours_blueprint(app):
         return redirect(url_for("users.user", user_hashid=user.hashid))
 
     return bp
-
-
 
 
 def create_user_blueprint(app):

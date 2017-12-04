@@ -8,7 +8,7 @@ from tourmap.models import User, Tour, ActivityPhotos
 from tourmap.resources import db
 from tourmap.controllers import TourController
 
-class TestTour(tourmap_test.TestCase):
+class TestTourMap(tourmap_test.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -22,19 +22,25 @@ class TestTour(tourmap_test.TestCase):
         response = self.client.get(url)
         response.assertStatusCode(200)
 
-        # print(response.data.decode())
-
     def test_tour_controller_activity_with_images(self):
-        result = self.tc.activities_for_map(self.user1, self.tour1)
-        # import pprint
-        # pprint.pprint(result)
-        # XXX: Do something
+        result = self.tc.prepare_activities_for_map(self.tour1)
+        self.assertEqual(1, len(result))
+        a = result[0]
+        self.assertIn("date", a)
+        self.assertIn("photos", a)
+        self.assertEqual(4, len(a["photos"]))
+        self.assertIn("name", a)
+        self.assertIn("latlngs", a)
 
     def test_tour_controller_activity_none_activity_photos(self):
-        result = self.tc.activities_for_map(self.user2, self.tour2)
-        # import pprint
-        # pprint.pprint(result)
-        # XXX: Do something
+        result = self.tc.prepare_activities_for_map(self.tour2)
+        self.assertEqual(1, len(result))
+        a = result[0]
+        self.assertIn("date", a)
+        self.assertIn("photos", a)
+        self.assertEqual(0, len(a["photos"]))
+        self.assertIn("name", a)
+        self.assertIn("latlngs", a)
 
     def test_tour_controller_activity_with_empty_activity_photos(self):
         activity = self.activity2
@@ -47,4 +53,18 @@ class TestTour(tourmap_test.TestCase):
         )
         db.session.add_all([activity, photos])
         db.session.commit()
-        result = self.tc.activities_for_map(self.user2, self.tour2)
+        result = self.tc.prepare_activities_for_map(self.tour2)
+        self.assertEqual(1, len(result))
+        a = result[0]
+        self.assertIn("photos", a)
+        self.assertEqual(0, len(a["photos"]))
+
+    def test_tour_controller_activity_with_empty_activity_photos(self):
+        prepared_activities = self.tc.prepare_activities_for_map(self.tour1)
+        settings = self.tc.get_map_settings(self.tour1, prepared_activities)
+
+        self.assertIn("tile_layer", settings)
+        self.assertIn("polyline", settings)
+        self.assertIn("bounds", settings)
+        corner1, corner2 = settings["bounds"]["corner1"], settings["bounds"]["corner2"]
+        self.assertLess(corner1, corner2)
