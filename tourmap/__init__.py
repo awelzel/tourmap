@@ -84,7 +84,7 @@ def create_app(config=None):
     def createdb():
         from tourmap.resources import db
         db.metadata.create_all(
-            bind=database.db.engine,
+            bind=db.engine,
             checkfirst=True
         )
 

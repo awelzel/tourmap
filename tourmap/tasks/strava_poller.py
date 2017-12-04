@@ -149,18 +149,18 @@ class StravaPoller(object):
                         "caption": p.get("caption"),
                         "width": p["__tourmap_width"],
                         "height": p["__tourmap_height"],
+                        "unique_id": p["unique_id"],
+                        "source": p["source"],
                     })
 
             photo = ActivityPhotos.query.filter_by(activity=activity).one_or_none()
             if photo is None:
                 photo = ActivityPhotos(user=user, activity=activity)
+                self.__session.add(photo)
 
             # We do this on every poll... It might hurt :-/
             json_blob = json.dumps(photos_dict, sort_keys=True)
-            if not photo.json_blob or photo.json_blob != json_blob:
-                photo.json_blob = json_blob
-
-            self.__session.add(photo)
+            photo.data = json_blob
 
         # Updating PollState:
         for k, v in result["state_update"].items():

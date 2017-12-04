@@ -7,6 +7,8 @@ from tourmap import database
 from tourmap.models import User, Tour, Activity
 from tourmap.resources import db
 
+from tourmap.controllers import TourController
+
 def create_user_tours_blueprint(app):
     """
     A blueprint designated to handle /users/<user_hashid>/tours/ stuff
@@ -90,20 +92,7 @@ def create_user_tours_blueprint(app):
         if user is None or tour is None or tour.user.id != user.id:
             abort(404)
 
-        activities = []
-        for src in tour.activities:
-            latlngs = list(src.latlngs)
-            if latlngs:
-                a = {
-                    "name": src.name,  # MAKE HTML SAFE!
-                    "date": src.start_date_local.date().isoformat(),
-                    # "latlngs": latlngs,
-                    # Naive sampling:
-                    "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
-                    "photos": src.photos.get_photos(256),
-                }
-                activities.append(a)
-
+        activities = TourController().activities_for_map(user, tour)
         return render_template("tours/tour.html",
                                user=user, tour=tour,
                                activities=activities)

@@ -10,9 +10,11 @@ import flask.wrappers
 
 
 import tourmap
-from tourmap.models import User, Activity, Tour
+from tourmap.models import User, Activity, ActivityPhotos, Tour
 from tourmap.resources import db
 from tourmap.utils import str2bool
+
+from .data import photos1_dict
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +130,11 @@ class TestCase(unittest.TestCase):
             elapsed_time=self.elapsed_time1,
             utc_offset=self.utc_offset1,
             summary_polyline="qpxtBkg}tQBhI_kArMka@kQshBbA_}AlZc`Boi@"
+        )
+        self.photos1 = ActivityPhotos(
+            user=self.user1,
+            activity=self.activity1,
+            data=json.dumps(photos1_dict)
         )
 
         self.start_date2 = datetime.datetime(2016, 9, 26, 19, 27)

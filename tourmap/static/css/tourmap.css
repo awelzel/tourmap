@@ -1,7 +1,17 @@
 /* For navbar to work properly... */
 body {
   padding-top: 70px;
-  /* min-height: 2000px; */
+  min-height: 1000px;
+}
+
+h3 {
+    margin-top: 10px;
+    font-size: 20px;
+
+}
+
+.jumbotron {
+    padding-top: 10px;
 }
 
 .photos-table {
@@ -32,4 +42,18 @@ body {
 table.activities-table>tbody>tr>td {
   vertical-align: middle;
   /* border: 1px solid red; */
+}
+
+#fullscreen {
+  width: 95%;
+  height: 95%; */
+  position: absolute;
+  margin: auto;
+  display: none;
+  left:0; top:0; right:0; bottom:0;
+
+}
+#fullscreen-img {
+    max-height: 100%;
+    max-width: 100%;
 }

@@ -273,13 +273,13 @@ class ActivityPhotos(db.Model):
 
     # A JSON map with sizes to lists of photos. Each photo is a map with
     # "width", "height", "url", "caption"
-    json_blob = db.Column(db.TEXT)
+    data = db.Column(db.TEXT, nullable=False)
     user = db.relationship(User)
     activity = db.relationship(Activity)
 
-    def get_photos(self, size=256):
-        d = json.loads(self.json_blob)
-        return d.get(str(size), [])
+    def get_photos(self):
+        data = json.loads(self.data)
+        return {int(size): photos for (size, photos) in data.items()}
 
 
 Activity.photos = db.relationship(ActivityPhotos, order_by=ActivityPhotos.id,
