@@ -22,21 +22,7 @@ class TourController(object):
 
     def _prepare_photos(self, activity):
         """
-        Create a list with entries:
-
-        [
-            {
-                "url": ...
-                "width": ...
-                "height": ...
-                "caption": ...
-                "large": {
-                    "url": ...
-                    "width": ...
-                    "height": ...
-                }
-            }
-        ]
+        Create a list of activities to be displayed by the UI.
         """
         result = []
 
@@ -85,6 +71,7 @@ class TourController(object):
                 "moving_time_str": a.moving_time_str,
                 "strava_link": a.strava_link,
                 "latlngs": latlngs,
+                "total_photo_count": a.total_photo_count,
                 "photos": photos,
             })
         return activities
@@ -110,8 +97,9 @@ class TourController(object):
         result = {}
 
         tile_layer_id = "mapbox.streets"
-        polyline_color = "red"
-        polyline_weight = 5
+        polyline_color = tour.polyline_color or "red"
+        polyline_weight = tour.polyline_weight or 5
+        marker_positioning = tour.marker_positioning or "end"
 
         result["tile_layer"] = {
             "provider": "mapbox",
@@ -127,6 +115,10 @@ class TourController(object):
         result["bounds"] = {
             "corner1": corner1,
             "corner2": corner2,
+        }
+
+        result["markers"] = {
+            "positioning": marker_positioning,
         }
 
         # Compute max bounds as percentage of the difference and some

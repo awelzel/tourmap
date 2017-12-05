@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, abort, request, current_app, redir
 from tourmap.models import Tour
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, TextAreaField
+from wtforms import StringField, DateField, TextAreaField, RadioField, SelectField
 from wtforms.validators import DataRequired, Optional
 
 class TourForm(FlaskForm):
@@ -21,7 +21,6 @@ class TourForm(FlaskForm):
         render_kw={"placeholder": "Optional description"},
         validators=[Optional()]
     )
-
     start_date = DateField(
         label="Start Date",
         render_kw={"placeholder": "Optional start date"},
@@ -30,6 +29,24 @@ class TourForm(FlaskForm):
     end_date = DateField(
         label="End Date",
         render_kw={"placeholder": "Optional end date"},
+        validators=[Optional()]
+    )
+    marker_positioning = SelectField(
+        label="Marker Position",
+        choices=[("end", "End"), ("middle", "Middle"), ("start", "Start")],
+        default="end",
+        validators=[Optional()]
+    )
+    polyline_color = SelectField(
+        label="Line Color",
+        choices=[
+            ("red", "Red"),
+            ("azure", "Azure"),
+            ("gold", "Gold"),
+            ("lightgreen", "Light Green"),
+            ("blue", "Blue"),
+            ("black", "Black"),
+        ],
         validators=[Optional()]
     )
 

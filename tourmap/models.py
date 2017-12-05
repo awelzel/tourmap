@@ -68,8 +68,11 @@ class Tour(db.Model, HashidMixin):
     start_date = db.Column(db.DateTime, nullable=True)
     end_date = db.Column(db.DateTime, nullable=True)
 
+    # Display settings
     tilelayer_provider = db.Column(db.String(16), nullable=True)
     polyline_color = db.Column(db.String(16), nullable=True)
+    polyline_weight = db.Column(db.SmallInteger, nullable=True)
+    marker_positioning = db.Column(db.String(16), nullable=True)
 
     @property
     def activities(self):

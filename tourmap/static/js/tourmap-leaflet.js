@@ -66,10 +66,18 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
   };
 
   function initMarkers() {
+    var positioning = _mapSettings["markers"]["positioning"]
     for (var i = 0; i < _activities.length; i++) {
       var activity = _activities[i];
       var latlngs = activity["latlngs"];
-      var marker = L.marker(latlngs[latlngs.length - 1]);
+      var markerLoc = latlngs[latlngs.length - 1];
+      if (positioning === "middle") {
+        markerLoc = latlngs[parseInt(latlngs.length / 2)];
+      } else if (positioning == "start") {
+        markerLoc = latlngs[0];
+      }
+
+      var marker = L.marker(markerLoc);
       _markers.push(marker);
 
       // Ugly hack to downsize the photos and popups on small screens.
@@ -187,6 +195,7 @@ function simplePopupForActivity(a) {
     ["Date", "date"],
     ["Distance", "distance_str"],
     ["Time", "moving_time_str"],
+    ["Photos", "total_photo_count"],
   ];
 
   for (var i = 0; i < descParts.length; i++) {

@@ -38,7 +38,8 @@ class LoginController(object):
             tour = Tour(
                 user=user,
                 name="All Activities",
-                description="Automatically created tour to display all activities on a single map."
+                marker_positioning="middle",
+                description="Automatically created."
             )
 
         user.email = athlete.get("email")
