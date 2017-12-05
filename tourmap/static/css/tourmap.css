@@ -4,9 +4,23 @@ body {
   min-height: 1000px;
 }
 
-h3 {
-    margin-top: 10px;
-    font-size: 20px;
+.activity-popup-inner dl {
+  margin-bottom: 5px;
+}
+
+/* do not let dt and dd stack */
+.activity-popup-inner .dl-horizontal dt {
+  float: left;
+  width: 160px;
+  overflow: hidden;
+  clear: left;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-popup-inner .dl-horizontal dd {
+  margin-left: 180px;
 }
 
 .photos-table {

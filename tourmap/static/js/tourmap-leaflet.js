@@ -82,8 +82,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
       }
 
       var content = _popupMaker(activity, photoColumns, photoFactor);
-      var popupWidth = content.getAttribute("data-max-width");
-      var popup = L.popup({minWidth: 300, maxWidth: "auto"});
+      var popup = L.popup({minWidth: 256, maxWidth: 256});
 
       popup.setContent(content);
       marker.bindPopup(popup);
@@ -117,7 +116,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
 
   function toggleMarkers() {
     var zoomLevel = _map.getZoom();
-    if (zoomLevel >= 6) {  // XXX: magic number...
+    if (zoomLevel >= 7) {  // XXX: magic number...
       placeMarkers();
     } else {
       removeMarkers();
@@ -179,9 +178,44 @@ function simplePopupForActivity(a) {
   $(popupTitle).text(a["name"])
   $(popupRoot).append(popupTitle);
 
-  var popupDesc = document.createElement("div");
-  $(popupDesc).text(a["date"])
-  $(popupRoot).append(popupDesc);
+  var popupInner = document.createElement("div");
+  $(popupInner).addClass("activity-popup-inner")
+  var descList = document.createElement("dl")
+  $(descList).addClass("dl-horizontal")
+
+  var descParts = [
+    ["Date", "date"],
+    ["Distance", "distance_str"],
+    ["Time", "moving_time_str"],
+  ];
+
+  for (var i = 0; i < descParts.length; i++) {
+    var dt = document.createElement("dt");
+    var dd = document.createElement("dd")
+    $(dt).text(descParts[i][0])
+    $(dd).text(a[descParts[i][1]])
+    $(descList).append(dt);
+    $(descList).append(dd);
+  }
+
+  // Nasty strava link hack
+  var dt = document.createElement("dt");
+  var dd = document.createElement("dd")
+  var stravaLink = document.createElement("a");
+  $(stravaLink).attr("href", a["strava_link"]);
+  $(stravaLink).attr("target", "_blank");
+  $(stravaLink).text(a["strava_id"]);
+  $(dt).text("View on Strava");
+  $(dd).append(stravaLink);
+  $(descList).append(dt);
+  $(descList).append(dd);
+
+
+  $(popupInner).append(descList);
+
+
+
+  $(popupRoot).append(popupInner);
 
   // Ugh, table...
   var imgTable = document.createElement("table");
@@ -223,6 +257,8 @@ function simplePopupForActivity(a) {
     });
     i++;
   });
-  $(popupRoot).append(imgTable);
+  var tableDiv = document.createElement("div");
+  $(tableDiv).append(imgTable);
+  $(popupInner).append(tableDiv);
   return popupRoot;
 }

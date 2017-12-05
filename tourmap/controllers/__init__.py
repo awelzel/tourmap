@@ -78,7 +78,12 @@ class TourController(object):
             photos = self._prepare_photos(a)
             activities.append({
                 "name": a.name,
+                "strava_id": str(a.strava_id),
                 "date": a.start_date_local.date().isoformat(),
+                "distance_str": a.distance_str,
+                "elapsed_time_str": a.elapsed_time_str,
+                "moving_time_str": a.moving_time_str,
+                "strava_link": a.strava_link,
                 "latlngs": latlngs,
                 "photos": photos,
             })

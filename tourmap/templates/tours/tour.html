@@ -31,8 +31,7 @@
 
   var mapState = mapStateMaker("mapid", activities, mapSettings, simplePopupForActivity);
   mapState.init();
-
   $(window).resize();
-  setTimeout(mapState.fitBoundsSetMinZoom, 333);
+  setTimeout(mapState.fitBoundsSetMinZoom, 500);
 </script>
 {% endblock %}
