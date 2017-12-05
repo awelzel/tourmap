@@ -214,9 +214,9 @@ class Activity(db.Model):
         self.summary_polyline = summary_polyline
 
         # XXX: We should probably just do a loop...
-        start_latlng = src.get("start_latlng", [None, None])
-        end_latlng = src.get("end_latlng", [None, None])
+        start_latlng = src.get("start_latlng", [None, None]) or [None, None]
         self.start_lat, self.start_lng = start_latlng[0], start_latlng[1]
+        end_latlng = src.get("end_latlng", [None, None]) or [None, None]
         self.end_lat, self.end_lng = end_latlng[0], end_latlng[1]
         self.distance = src.get("distance")
         self.moving_time = src.get("moving_time")

@@ -120,8 +120,10 @@ class StravaPoller(object):
 
     def _process_result(self, poll_state_id, result, submit_kwargs):
         """
-
+        Process a result received from a fetch (either latest or full).
         """
+        unused = submit_kwargs
+        submit_kwargs = None
         poll_state = PollState.query.get(poll_state_id)
         user = poll_state.user
 
@@ -173,8 +175,10 @@ class StravaPoller(object):
 
     def _process_result_futures(self):
         """
-        If something was found that had a status of "done", return True
-        else False.
+        Go through the list of futures we have and check if anything
+        needs to be processed.
+
+        :return: True if a future was processed, else False.
         """
         found_done_future = False
         for poll_state_id, (future, submit_kwargs) in list(self.__result_futures.items()):

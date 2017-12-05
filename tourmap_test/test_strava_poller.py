@@ -3,12 +3,14 @@ import unittest.mock
 import uuid
 
 import tourmap_test
-from tourmap.models import User, Tour, PollState, Token
-import tourmap.views.strava
+import tourmap_test.data
+
+from tourmap.models import Activity, User, Tour, PollState, Token
 from tourmap.resources import db
-from tourmap.utils.strava import StravaClient, StravaBadRequest
 from tourmap.utils import dt2ts
+from tourmap.utils.json import dumps
 from tourmap.utils.objpool import ObjectPool
+from tourmap.utils.strava import StravaClient, StravaBadRequest
 
 from tourmap.tasks.strava_poller import StravaPoller
 
@@ -94,3 +96,45 @@ class StravaPollerTest(tourmap_test.TestCase):
             result["state_update"]["last_fetch_completed_at"],
             datetime.datetime
         )
+
+    def test_json_dumps(self):
+        serialize_this = {
+            "now": datetime.datetime.utcnow(),
+            "today": datetime.date.today(),
+            "array": [
+                1, "Stuff", {}
+            ]
+        }
+        result = dumps(serialize_this)
+
+    def test_process_results_crash1(self):
+        from tourmap_test.data import poller_crash_results1
+        self.strava_poller._process_result(
+            poll_state_id=self.poll_state.id,
+            result=poller_crash_results1,
+            submit_kwargs=None
+        )
+        self.assertEqual(4, Activity.query.count())
+
+        # This one did not have start/end latlng values, check it!
+        strava_id = 981285468
+        a = Activity.query.filter_by(strava_id=strava_id).one()
+        self.assertEqual("Morning Ride", a.name)
+        self.assertIsNone(a.summary_polyline)
+        self.assertEqual(0, len(a.latlngs))
+        self.assertIsNone(a.start_lat)
+        self.assertIsNone(a.start_lng)
+        self.assertIsNone(a.end_lat)
+        self.assertIsNone(a.end_lng)
+
+        # This one had some start/end latlngs...
+        strava_id = 981446234
+        a = Activity.query.filter_by(strava_id=strava_id).one()
+        self.assertEqual(5516, a.moving_time)
+        self.assertEqual(7634, a.elapsed_time)
+        self.assertTrue(a.summary_polyline)
+        self.assertEqual(96, len(a.latlngs))
+        self.assertAlmostEqual(37.72, a.start_lat)
+        self.assertAlmostEqual(-122.4, a.start_lng)
+        self.assertAlmostEqual(37.57, a.end_lat)
+        self.assertAlmostEqual(-122.32, a.end_lng)
