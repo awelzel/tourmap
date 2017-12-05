@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from '_widgets.html' import form_tour %}
+{% block title %}Edit Tour{% endblock title %}
+{% block content %}
+<h3>Edit {{ tour.name }}</h3>
+<div class="row">
+    <div class="col-sm-12">
+        {% set action = url_for("user_tours.tour",
+                                user_hashid=tour.user.hashid,
+                                tour_hashid=tour.hashid) %}
+        {{ form_tour(form, action, btn_text="Update") }}
+    </div>
+</div>
+{% endblock %}

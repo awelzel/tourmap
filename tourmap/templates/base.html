@@ -19,7 +19,7 @@
         <img class="img-rounded" id="fullscreen-img" src="" alt="">
       </div>
       <div id="whole-page-container">
-      <nav id="navigation" class="navbar navbar-default navbar-fixed-top">
+      <div role="navigation" class="navbar navbar-default navbar-fixed-top">
       <div id="navigation" class="container-fluid">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -51,11 +51,10 @@
                     <img alt="Powered by Strava" height="25px" src="{{ url_for("static", filename="strava/api_logo_pwrdBy_strava_horiz_light.png")}}">
                 </a>
             </li>
-            </li>
           </ul>
         </div>
       </div>
-    </nav>
+    </div>
     <div class="container-fluid">
         <div id="flashed-messages">
             {% set messages = get_flashed_messages(with_categories=true) %}
@@ -71,7 +70,6 @@
 	    {% block content %}
 	    {% endblock %}
 	</div>
-        <div id="footer"></nav>
     </div>
     </div>
     </body>

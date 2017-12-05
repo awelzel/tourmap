@@ -11,9 +11,9 @@
         <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
 {% endblock %}
-{% block title %}{{ tour.name }} - by {{ user.firstname }}{% endblock %}
+{% block title %}{{ tour.name }} - by {{ user.name_str }}{% endblock %}
 {% block content %}
-<h3>{{ tour.name }} by {{ user.firstname }}</h3>
+<h3>{{ tour.name }} by {{ user.name_str }}</h3>
 <div class="row">
   <div id="mappos" class="col-sm-12">
       <div id="mapid"></div>

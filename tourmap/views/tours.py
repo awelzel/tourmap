@@ -7,6 +7,9 @@ from wtforms import StringField, DateField, TextAreaField
 from wtforms.validators import DataRequired, Optional
 
 class TourForm(FlaskForm):
+
+    tour_exists_errors = ["A tour with this name already exists."]
+
     name = StringField(
         label="Name",
         render_kw={"placeholder": "Name"},
@@ -29,6 +32,10 @@ class TourForm(FlaskForm):
         render_kw={"placeholder": "Optional end date"},
         validators=[Optional()]
     )
+
+    def set_tour_exists(self):
+        self.name.errors = self.tour_exists_errors
+        self.errors["name"] = list(self.name.errors)
 
 
 def create_blueprint(app):

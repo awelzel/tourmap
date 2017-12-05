@@ -1,24 +1,22 @@
 {% extends "base.html" %}
 {% from '_widgets.html' import table_tours, table_activities_summary %}
-{% block title %}{{ user.firstname }}{% endblock title %}
+{% block title %}{{ user.name_str }}{% endblock title %}
 {% block content %}
+<h3>{{ user.name_str }}</h3>
 <div class="row">
-  <div class="col-sm-4">
-    <h3>{{ user.firstname }}</h3>
-  </div>
-</div>
-<div class="row">
-  <div class="col-sm-6">
+  <div class="col-sm-12">
     <h4>Tours</h4>
-    <div>
-      {{ table_tours(tours, for_user=current_user == user) }}
-    </div>
     {% if user == current_user -%}
     {% set new_link = url_for("user_tours.new_tour", user_hashid=user.hashid) %}
     <a href="{{ new_link }}" class="btn btn-default">New Tour</a>
     {% endif %}
+    <div>
+      {{ table_tours(tours, for_user=current_user == user) }}
+    </div>
   </div>
-  <div class="col-sm-6">
+</div>
+<div class="row">
+  <div class="col-sm-12">
     <h4>{{ recent_activities | length }} Most Recent Activities</h4>
     <div>
       {{ table_activities_summary(recent_activities) }}

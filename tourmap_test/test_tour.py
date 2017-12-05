@@ -1,6 +1,6 @@
 import tourmap_test
 
-from tourmap.models import User, Tour
+from tourmap.models import Tour
 from tourmap.resources import db
 
 class TestTour(tourmap_test.TestCase):
@@ -168,3 +168,63 @@ class TestTour(tourmap_test.TestCase):
         response.assertStatusCode(403)
 
         self.assertEqual(2, Tour.query.count())
+
+    def test_edit_tour(self):
+        # url = "/users/{}/tours".format(self.user1.hashid)
+        url = "/users/{}/tours/{}/edit".format(self.user1.hashid, self.tour1.hashid)
+        response = self.client.get(url)
+        response.assertStatusCode(200)
+        response.assertHTML()
+
+        # This is where we post to...
+        action = 'action="/users/{}/tours/{}"'.format(
+            self.user1.hashid, self.tour1.hashid
+        ).encode()
+        response.assertDataContains(action)
+
+    def test_edit_tour_wrong_user(self):
+        # User1 tries to get the edit form for User2, not allowed...
+        db.session.add(self.tour2)
+        db.session.commit()
+        url = "/users/{}/tours/{}/edit".format(self.user2.hashid, self.tour2.hashid)
+        response = self.client.get(url)
+        response.assertStatusCode(403)
+
+    def test_update_tour(self):
+        # Updating a tour by POSTING tour it's endpoint
+        url = "/users/{}/tours/{}".format(self.user1.hashid, self.tour1.hashid)
+        form = {
+            "name": "Changed Name",
+        }
+        response = self.client.post(url, data=form)
+        response.assertStatusCode(302)
+        response = response.followRedirect(self.client)
+        response.assertDataContains(b"Updated tour")
+
+        tour1 = Tour.query.get(self.tour1.id)
+        self.assertEqual("Changed Name", tour1.name)
+
+    def test_update_tour_invalid_data(self):
+        # Updating a tour by POSTING tour it's endpoint
+        url = "/users/{}/tours/{}".format(self.user1.hashid, self.tour1.hashid)
+        form = {
+            "start_date": "This is bogus",
+        }
+        response = self.client.post(url, data=form)
+        response.assertStatusCode(200)
+        response.assertDataContains(b"Not a valid date")
+
+    def test_update_tour_wrong_user(self):
+        # user1 tries to update tour2
+        db.session.add(self.tour2)
+        db.session.commit()
+        orig_name = self.tour2.name
+        url = "/users/{}/tours/{}".format(self.user2.hashid, self.tour2.hashid)
+        form = {
+            "name": "Changed Name",
+        }
+        response = self.client.post(url, data=form)
+        response.assertStatusCode(403)
+
+        tour2 = Tour.query.get(self.tour2.id)
+        self.assertEqual(orig_name, tour2.name)

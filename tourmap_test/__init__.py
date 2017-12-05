@@ -7,6 +7,8 @@ import unittest
 
 import flask
 import flask.wrappers
+import lxml.html
+import lxml.etree
 
 
 import tourmap
@@ -38,6 +40,14 @@ class TestableResponse(flask.wrappers.Response):
         if self.status_code != status_code:
             msg = "status_code {} != {}".format(self.status_code, status_code)
             raise AssertionError(msg)
+
+    def assertHTML(self):
+        """
+        Run the Python provided html parser over data and see if it crashed.
+        """
+        html_parser = lxml.etree.HTMLParser(recover=False)
+        return lxml.html.document_fromstring(self.data, parser=html_parser,
+                                             ensure_head_body=True)
 
     def assertDataContains(self, s):
         if s not in self.data:

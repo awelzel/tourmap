@@ -30,7 +30,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
   function fitBounds() {
     var maxCorner1 = L.latLng(_mapSettings["max_bounds"]["corner1"]);
     var maxCorner2 = L.latLng(_mapSettings["max_bounds"]["corner2"]);
-    _map.fitBounds([maxCorner1, maxCorner2], {animate: true});
+    _map.fitBounds([maxCorner1, maxCorner2], {animate: false});
   };
 
   function tileLayerSetup() {

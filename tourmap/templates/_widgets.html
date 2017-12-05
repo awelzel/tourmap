@@ -1,4 +1,6 @@
 {# Macro creating a table of activities #}
+{% from '_formhelpers.html' import bt_render_field -%}
+
 {% macro table_activities_summary(activities, truncate_name_len=32) -%}
 <table class="activities-table table table-striped table-condensed">
     <thead>
@@ -69,7 +71,8 @@
         <th>Start Date</th>
         <th>End Date</th>
         {% if for_user -%}
-        <th>Operations</th>
+        <th>Edit</th>
+        <th>Delte</th>
         {% endif -%}
 
     </thead>
@@ -87,6 +90,12 @@
           <td>{{ t.end_date_str }}</td>
           {% if for_user -%}
           {% set del_link = url_for("user_tours.delete", user_hashid=t.user.hashid, tour_hashid=t.hashid) -%}
+          {% set edit_link = url_for("user_tours.edit", user_hashid=t.user.hashid, tour_hashid=t.hashid) -%}
+          <td>
+            <a href="{{ edit_link }}">
+              <button type="submit" class="btn btn-default">Edit</button>
+            </a>
+          </td>
           <td>
             <form method="POST" action="{{ del_link }}">
               <button type="submit" onclick="return confirm('Sure?')" class="btn btn-warning">
@@ -99,4 +108,21 @@
         {% endfor %}
     </tbody>
 </table>
+{%- endmacro %}
+
+
+
+{#
+ # Macro creating a form for a tour
+ #}
+{% macro form_tour(form, action, btn_text) -%}
+<form class="form-horizontal" method="post" action="{{ action }}">
+  {{ form.csrf_token }}
+  {{ bt_render_field(form.name) }}
+  {{ bt_render_field(form.description) }}
+  {{ bt_render_field(form.start_date) }}
+  {{ bt_render_field(form.end_date) }}
+  <button type="submit" class="col-sm-offset-2 btn btn-default">{{ btn_text }}</button>
+</form>
+
 {%- endmacro %}
