@@ -15,27 +15,27 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
 
 
   function viewSetup() {
-    let corner1 = L.latLng(_mapSettings["bounds"]["corner1"]);
-    let corner2 = L.latLng(_mapSettings["bounds"]["corner2"]);
-    let maxCorner1 = L.latLng(_mapSettings["max_bounds"]["corner1"]);
-    let maxCorner2 = L.latLng(_mapSettings["max_bounds"]["corner2"]);
+    var corner1 = L.latLng(_mapSettings["bounds"]["corner1"]);
+    var corner2 = L.latLng(_mapSettings["bounds"]["corner2"]);
+    var maxCorner1 = L.latLng(_mapSettings["max_bounds"]["corner1"]);
+    var maxCorner2 = L.latLng(_mapSettings["max_bounds"]["corner2"]);
 
-    let initialLat = (corner1.lat + corner2.lat) / 2.0;
-    let initialLng = (corner1.lng + corner2.lng) / 2.0;
+    var initialLat = (corner1.lat + corner2.lat) / 2.0;
+    var initialLng = (corner1.lng + corner2.lng) / 2.0;
 
     _map.setView([initialLat, initialLng], 1, {animate: false});
     _map.setMaxBounds([maxCorner1, maxCorner2]);
   };
 
   function fitBounds() {
-    let maxCorner1 = L.latLng(_mapSettings["max_bounds"]["corner1"]);
-    let maxCorner2 = L.latLng(_mapSettings["max_bounds"]["corner2"]);
+    var maxCorner1 = L.latLng(_mapSettings["max_bounds"]["corner1"]);
+    var maxCorner2 = L.latLng(_mapSettings["max_bounds"]["corner2"]);
     _map.fitBounds([maxCorner1, maxCorner2], {animate: true});
   };
 
   function tileLayerSetup() {
-    let tileLayerSettings = mapSettings["tile_layer"];
-    let tileLayerOptions = tileLayerSettings["options"];
+    var tileLayerSettings = mapSettings["tile_layer"];
+    var tileLayerOptions = tileLayerSettings["options"];
     tileLayerOptions["maxZoom"] = tileLayerOptions["max_zoom"];
     delete tileLayerOptions["max_zoom"];
 
@@ -57,17 +57,19 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
 
   function addPolylines() {
     var polylineOptions = mapSettings["polyline"]["options"];
-    for (let a of activities) {
-      let polyline = L.polyline(a["latlngs"], polylineOptions);
+    for (var i = 0; i < _activities.length; i++) {
+      var activity = _activities[i];
+      var polyline = L.polyline(activity["latlngs"], polylineOptions);
       polyline.addTo(_map);
       _polyLines.push(polyline);
     }
   };
 
   function initMarkers() {
-    for (let a of _activities) {
-      var latlngs = a["latlngs"];
-      let marker = L.marker(latlngs[latlngs.length - 1]);
+    for (var i = 0; i < _activities.length; i++) {
+      var activity = _activities[i];
+      var latlngs = activity["latlngs"];
+      var marker = L.marker(latlngs[latlngs.length - 1]);
       _markers.push(marker);
 
       // Ugly hack to downsize the photos and popups on small screens.
@@ -79,7 +81,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
         var photoFactor = 0.5;
       }
 
-      var content = _popupMaker(a, photoColumns, photoFactor);
+      var content = _popupMaker(activity, photoColumns, photoFactor);
       var popupWidth = content.getAttribute("data-max-width");
       var popup = L.popup({minWidth: 300, maxWidth: "auto"});
 
