@@ -76,7 +76,7 @@ class LoginController(object):
             # same account at the same time. But than he can just
             # retry...
             current_app.logger.exception("User %s: %s", user, e)
-            self.__.session.rollback()
+            self.__session.rollback()
             abort(500)
 
         return new_user, user
