@@ -126,7 +126,7 @@ class TourController(object):
 
         # Compute max bounds as percentage of the difference and some
         # other heuristics, cough...
-        max_wiggle = 0.05
+        max_wiggle = 0.10
         lat_wiggle = max(abs(corner1[0] - corner2[0]) * max_wiggle, 3.0)
         lng_wiggle = max(abs(corner1[1] - corner2[1]) * max_wiggle, 3.0)
         result["max_bounds"] = {
