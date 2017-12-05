@@ -28,7 +28,8 @@ class StravaPollerTest(tourmap_test.TestCase):
         self.tour = Tour(user=self.user, name="Simple Test Tour")
         self.token = Token(user=self.user, access_token=uuid.uuid4().hex)
         self.poll_state = PollState(user=self.user)
-        self.session.add_all([self.user, self.buser, self.cuser, self.token, self.tour, self.poll_state])
+        self.session.add_all([self.user, self.buser, self.cuser, self.token,
+                              self.tour, self.poll_state])
         self.session.commit()
 
         self.strava_client_pool = ObjectPool(lambda: self.strava_client_mock)
@@ -138,3 +139,15 @@ class StravaPollerTest(tourmap_test.TestCase):
         self.assertAlmostEqual(-122.4, a.start_lng)
         self.assertAlmostEqual(37.57, a.end_lat)
         self.assertAlmostEqual(-122.32, a.end_lng)
+
+    def test_latest_fetch_bad_logging(self):
+        from tourmap_test.data import photos1_dict, activity1_dict
+
+        self.strava_client_mock.activities.return_value = [activity1_dict]
+        self.strava_client_mock.activity_photos.return_value = []
+        self.strava_poller._latest_fetch(
+            self.strava_client_mock,
+            self.user,
+            self.token,
+            self.poll_state
+        )

@@ -23,7 +23,6 @@ def configure_app(app, config=None):
     app.config.from_object("tourmap.config.defaults")
 
     if config:
-        logger.info("Explicit config dict provided...")
         app.config.update(config)
     elif _is_heroku_env():
         logger.info("Detected heroku environment...")

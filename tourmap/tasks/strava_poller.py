@@ -328,7 +328,8 @@ class StravaPoller(object):
                            self.__latest_lookback_per_page, len(activities))
 
         if len(activities) > 0:
-            logger.info("%s: Got %s new activities (%s)", user, len(activities))
+            logger.info("Got %s new activities for %s", user, len(activities))
+
         for a in self._activity_resource_state_filter(activities):
             result_photos = self._fetch_photos_for_activity(client, token, a)
             result_activities.append({
