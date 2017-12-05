@@ -43,14 +43,13 @@ table.activities-table>tbody>tr>td {
   /* border: 1px solid red; */
 }
 
-#fullscreen {
+#fullscreen-container {
   width: 98vw;
   height: 98vh;
   position: absolute;
   margin: auto;
   display: none;
   left:0; top:0; right:0; bottom:0;
-
 }
 
 #fullscreen-img {

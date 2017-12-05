@@ -13,7 +13,6 @@ MAPBOX_URL = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=
 
 class TourController(object):
 
-
     def _pdict(self, p):
         return {
             "url": p["url"],
@@ -119,32 +118,27 @@ class TourController(object):
                 "id": tile_layer_id,
             }
         }
-
-
         corner1, corner2 = self._find_bounds(prepared_activities)
-
         result["bounds"] = {
             "corner1": corner1,
             "corner2": corner2,
         }
 
-        # Compute max mounds as percentage of the difference and some
-        # more freaking heuristics...
-        max_wiggle = 0.15
-        lat_wiggle = max(abs(corner1[0] - corner2[0]) * max_wiggle, 5.0)
-        lng_wiggle = max(abs(corner1[1] - corner2[1]) * max_wiggle, 5.0)
-        print(corner1, corner2)
-        print(lat_wiggle, lng_wiggle)
+        # Compute max bounds as percentage of the difference and some
+        # other heuristics, cough...
+        max_wiggle = 0.05
+        lat_wiggle = max(abs(corner1[0] - corner2[0]) * max_wiggle, 3.0)
+        lng_wiggle = max(abs(corner1[1] - corner2[1]) * max_wiggle, 3.0)
         result["max_bounds"] = {
             "corner1": (corner1[0] - lat_wiggle, corner1[1] - lng_wiggle),
             "corner2": (corner2[0] + lat_wiggle, corner2[1] + lng_wiggle),
         }
 
+        # polyline options...
         result["polyline"] = {
             "options": {
                 "color": polyline_color,
                 "weight": polyline_weight,
             }
         }
-
         return result

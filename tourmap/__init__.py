@@ -44,6 +44,7 @@ def create_app(config=None):
         ),
         "map_js": Bundle(
             "js/lib/leaflet-1.2.0.js",
+            "js/tourmap-leaflet.js",
             output="gen/map.js"
         ),
         "map_css": Bundle(

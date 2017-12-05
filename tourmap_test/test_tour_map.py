@@ -68,7 +68,6 @@ class TestTourMap(tourmap_test.TestCase):
         self.assertIn("bounds", settings)
         corner1, corner2 = settings["bounds"]["corner1"], settings["bounds"]["corner2"]
         self.assertLess(corner1, corner2)
-
         self.assertIn("max_bounds", settings)
         max_corner1 = settings["max_bounds"]["corner1"]
         max_corner2 = settings["max_bounds"]["corner2"]
