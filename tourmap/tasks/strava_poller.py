@@ -15,7 +15,7 @@ It then submits the tasks to a ThreadPoolExecutor to work on. The idea is
 that the whole thing is extremly IO bound, so threads are just fine.
 """
 import datetime
-import json
+from tourmap.utils import json
 import logging
 import queue
 import time
@@ -182,6 +182,7 @@ class StravaPoller(object):
                 continue
 
             found_done_future = True
+            result = None
             logger.debug("Processing done future: %s", future)
             try:
                 result = future.result()
@@ -189,6 +190,7 @@ class StravaPoller(object):
             except Exception as e:
                 self.__session.rollback()
                 logger.exception("Job failed: %s", repr(e))
+                logger.error("Failing result: %s", json.dumps(result))
             finally:
                 self.__result_futures.pop(poll_state_id)
 
