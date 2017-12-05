@@ -44,12 +44,15 @@ def create_app(config=None):
         ),
         "map_js": Bundle(
             "js/lib/leaflet-1.2.0.js",
-            "js/tourmap-leaflet.js",
             output="gen/map.js"
         ),
         "map_css": Bundle(
             "css/lib/leaflet-1.2.0.css",
             output="gen/map.css"
+        ),
+        "tourmap_leaflet_map_js": Bundle(
+            "js/tourmap-leaflet.js",
+            output="gen/tourmap-leaflet-map.js"
         ),
     }
     assets.register(bundles)

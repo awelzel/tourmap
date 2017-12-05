@@ -7,6 +7,9 @@
     {% assets "map_css" %}
         <link rel="stylesheet" href="{{ ASSET_URL }}"/>
     {% endassets %}
+    {% assets "tourmap_leaflet_map_js" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
 {% endblock %}
 {% block title %}{{ tour.name }} - by {{ user.firstname }}{% endblock %}
 {% block content %}
