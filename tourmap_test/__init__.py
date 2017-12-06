@@ -31,6 +31,8 @@ TEST_CONFIG = {
         "STRAVA_CLIENT_BASE_URL": "http://localhost:33",
         "SQLALCHEMY_ECHO": str2bool(os.environ.get("SQLALCHEMY_ECHO", "false")),
         "MAPBOX_ACCESS_TOKEN": "MAPBOXTESTTOKEN",
+
+        "LOG_LEVEL": "CRITICAL",
 }
 
 
@@ -86,7 +88,6 @@ class TestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        logger.info("Creating database tables...")
         app = tourmap.create_app(config=TEST_CONFIG)
         with app.app_context():
             db.drop_all()

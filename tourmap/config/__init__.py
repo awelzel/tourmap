@@ -13,22 +13,21 @@ def _is_heroku_env(environ=None):
 def configure_logging(app):
     """
     Configure the root logger and remove the crazy handlers from
-    app.logger and set the propagate flag of that logger, too.
+    app.logger and set the propagate flag of that logger.
 
-    This creates a bog standard stderr logger - this works best when
+    This creates a bog standard stderr logger as that works best when
     some other process (supervisord, systemd, etc.) captures the output
-    and writes it to file. We don't want to bother with opening files,
-    rotating them, etc.
+    and writes it to file/syslog/ELK. We don't want to bother with
+    opening files, rotating them, etc etc.
     """
     loglevel = getattr(logging, app.config.get("LOG_LEVEL", "INFO").upper())
     root_logger = logging.getLogger()
 
     if root_logger.handlers:
-        logger.warning("Resetting root logger handlers!")
         for h in root_logger.handlers[:]:
             root_logger.removeHandler(h)
 
-    fmt = "%(levelname)s:[%(threadName)s|%(thread)d]:%(name)s: %(message)s"
+    fmt = "%(levelname)-7s - %(threadName)-13s - %(name)s: %(message)s"
     formatter = logging.Formatter(fmt)
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
@@ -37,7 +36,6 @@ def configure_logging(app):
     root_logger.addHandler(stream_handler)
 
     # Reset the app.logger setup
-    logger.info("Removing flask logger handlers...")
     for h in app.logger.handlers[:]:
         app.logger.removeHandler(h)
     app.logger.propagate = True

@@ -1,6 +1,7 @@
 import datetime
 import unittest.mock
 import uuid
+from concurrent.futures import Future
 
 import tourmap_test
 import tourmap_test.data
@@ -10,12 +11,12 @@ from tourmap.resources import db
 from tourmap.utils import dt2ts
 from tourmap.utils.json import dumps
 from tourmap.utils.objpool import ObjectPool
-from tourmap.utils.strava import StravaClient, StravaBadRequest
+from tourmap.utils.strava import StravaClient, StravaBadRequest, InvalidAthleteAccessToken
 
 from tourmap.tasks.strava_poller import StravaPoller
 
 
-class StravaPollerTest(tourmap_test.TestCase):
+class TestStravaPoller(tourmap_test.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -42,6 +43,12 @@ class StravaPollerTest(tourmap_test.TestCase):
         states = list(self.strava_poller._get_poll_states())
         self.assertEqual(0, len(states))
 
+    def test_get_poll_states__exclude_error(self):
+        self.poll_state.set_error("Errors are excluded!", {})
+        self.session.commit()
+        states = list(self.strava_poller._get_poll_states())
+        self.assertEqual(0, len(states))
+
     def test_get_poll_states__single_state(self):
         states = list(self.strava_poller._get_poll_states())
         self.assertEqual(1, len(states))
@@ -57,7 +64,6 @@ class StravaPollerTest(tourmap_test.TestCase):
         self.session.commit()
         states = list(self.strava_poller._get_poll_states())
         self.assertEqual(2, len(states))
-
 
     def test_fetch_activities__full_fetch_mode(self):
         self.strava_client_mock.activities.return_value = []
@@ -110,11 +116,7 @@ class StravaPollerTest(tourmap_test.TestCase):
 
     def test_process_results_crash1(self):
         from tourmap_test.data import poller_crash_results1
-        self.strava_poller._process_result(
-            poll_state_id=self.poll_state.id,
-            result=poller_crash_results1,
-            submit_kwargs=None
-        )
+        self.strava_poller._process_result(self.poll_state, poller_crash_results1)
         self.assertEqual(4, Activity.query.count())
 
         # This one did not have start/end latlng values, check it!
@@ -151,3 +153,29 @@ class StravaPollerTest(tourmap_test.TestCase):
             self.token,
             self.poll_state
         )
+
+    def test_process_result_futures(self):
+        future = Future()
+        error_data = {
+            "response_data": {
+                "errors": [
+                    {"code": "invalid"},  # ...
+                ]
+            },
+            "response_headers": {
+                "Cache-Control": "no-cache",
+            }
+        }
+        ex = InvalidAthleteAccessToken("Really bad...", error_data)
+        future.set_exception(ex)
+        futures = {
+            self.poll_state.id: future,
+        }
+
+        self.strava_poller._process_result_futures(futures)
+
+        self.assertTrue(self.poll_state.error_happened)
+        self.assertEqual("Really bad...", self.poll_state.error_message)
+        self.assertIn("Cache-Control", self.poll_state.error_data)
+        code = self.poll_state.get_error_data()["response_data"]["errors"][0]["code"]
+        self.assertEqual("invalid", code)

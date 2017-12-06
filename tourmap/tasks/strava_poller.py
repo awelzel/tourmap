@@ -23,6 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from tourmap.models import PollState, Activity, ActivityPhotos
 from tourmap.utils import dt2ts
+from tourmap.utils.strava import InvalidAthleteAccessToken
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +92,13 @@ class StravaPoller(object):
                 | (PollState.last_fetch_completed_at < last_fetch_before_dt)
             )
         )
-
+        not_error = (
+            PollState.error_happened.is_(None)
+            | PollState.error_happened.is_(False)
+        )
         query = (
             self.__session.query(PollState)
-            .filter(full_fetch_in_progress | needs_latest_fetch)
+            .filter((full_fetch_in_progress | needs_latest_fetch) & not_error)
         )
         if self._has_submitted_ids():
             query = query.filter(PollState.id.notin_(self._get_submitted_ids()))
@@ -114,17 +118,14 @@ class StravaPoller(object):
                 "poll_state": poll_state,
             }
             logger.debug("Submitting: %s", repr(submit_kwargs))
-            future = executor.submit(self.fetch_activities, **submit_kwargs)
             assert poll_state.id not in self.__result_futures
-            self.__result_futures[poll_state.id] = (future, submit_kwargs)
+            future = executor.submit(self.fetch_activities, **submit_kwargs)
+            self.__result_futures[poll_state.id] = future
 
-    def _process_result(self, poll_state_id, result, submit_kwargs):
+    def _process_result(self, poll_state, result):
         """
         Process a result received from a fetch (either latest or full).
         """
-        unused = submit_kwargs
-        submit_kwargs = None
-        poll_state = PollState.query.get(poll_state_id)
         user = poll_state.user
 
         for activity_info in result["activity_infos"]:
@@ -168,12 +169,14 @@ class StravaPoller(object):
         for k, v in result["state_update"].items():
             getattr(poll_state, k)
             setattr(poll_state, k, v)
-            self.__session.add(poll_state)
+
+        # This should be a no-op in most cases.
+        poll_state.clear_error()
 
         # Commit after we worked through one result.
         self.__session.commit()
 
-    def _process_result_futures(self):
+    def _process_result_futures(self, futures):
         """
         Go through the list of futures we have and check if anything
         needs to be processed.
@@ -181,22 +184,33 @@ class StravaPoller(object):
         :return: True if a future was processed, else False.
         """
         found_done_future = False
-        for poll_state_id, (future, submit_kwargs) in list(self.__result_futures.items()):
+        for poll_state_id, future in list(futures.items()):
             if not future.done():
                 continue
 
+            poll_state = PollState.query.get(poll_state_id)
             found_done_future = True
             result = None
             logger.debug("Processing done future: %s", future)
             try:
                 result = future.result()
-                self._process_result(poll_state_id, result, submit_kwargs)
+                self._process_result(poll_state, result)
+
+            except InvalidAthleteAccessToken as e:
+                # This is an error we can not ignore, the user probably
+                # just removed access to their data for us. We mark their
+                # PollState to have an error...
+                logger.warning("Invalid access token for %s", poll_state.user)
+                poll_state.set_error(e.message, e.error_data)
+                self.__session.commit()
             except Exception as e:
-                self.__session.rollback()
                 logger.exception("Job failed: %s", repr(e))
                 logger.error("Failing result: %s", json.dumps(result))
             finally:
-                self.__result_futures.pop(poll_state_id)
+                futures.pop(poll_state_id)
+
+                # Clean slate for the next one...
+                self.__session.rollback()
 
         return found_done_future
 
@@ -213,7 +227,7 @@ class StravaPoller(object):
             self._submit(executor)
             # Only if there was no work to be done, sleep a bit, else
             # kick in another _submit() round...
-            if not self._process_result_futures():
+            if not self._process_result_futures(self.__result_futures):
                 self._sleep()
 
     def _fetch_photos_for_activity(self, client, token, activity):
@@ -226,7 +240,6 @@ class StravaPoller(object):
         if activity["total_photo_count"] == 0:
             logger.debug("Skipping photo fetch...")
             return result_photos
-
 
         for requested_size in requested_sizes:
             photos = client.activity_photos(token.access_token, activity["id"],

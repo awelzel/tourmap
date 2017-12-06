@@ -1,3 +1,6 @@
+"""
+Very basic wrapper around the Strava API V3.
+"""
 import logging
 import os
 from urllib.parse import urljoin, urlencode
@@ -22,6 +25,18 @@ class StravaBadRequest(StravaError):
 
 
 class StravaTimeout(StravaError):
+    pass
+
+
+class InvalidAccessToken(StravaError):
+    """Issues with the provided access token."""
+    def __init__(self, message, error_data):
+        super().__init__(message, error_data)
+        self.message = message
+        self.error_data = error_data
+
+class InvalidAthleteAccessToken(InvalidAccessToken):
+    """Raised when an Athletes access token was invalid."""
     pass
 
 
@@ -76,7 +91,8 @@ class StravaClient(object):
             logger.exception("Error doing request...")
             raise StravaError(repr(e) + " --- " + response.text)
 
-    def authorize_redirect_url(self, redirect_uri, scope=None, approval_prompt="auto", state=None):
+    def authorize_redirect_url(self, redirect_uri, scope=None,
+                               approval_prompt="auto", state=None):
         """
         Create an URL representing the authorize endpoint on Strava's side.
         """
@@ -110,6 +126,22 @@ class StravaClient(object):
         )
         return response.json()
 
+    def _handle_4xx(self, response):
+        data = response.json()
+        msg = data.get("message")
+        error_data = {
+            "response_data": data,
+            "response_headers": dict(response.headers),
+        }
+        status_code = response.status_code
+        errors = data.get("errors", [])
+        for e in errors:
+            if e.get("code") == "invalid" and e.get("field") == "access_token":
+                if e.get("resource") == "Athlete":
+                    raise InvalidAthleteAccessToken(msg, error_data)
+
+                raise InvalidAccessToken(msg, error_data)
+
     def _api_v3_get_auth(self, token, url, **kwargs):
         """
         Helper for an API v3 request.
@@ -132,8 +164,17 @@ class StravaClient(object):
             return response.json()
         except requests.exceptions.Timeout as e:
             raise StravaTimeout()
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            if 400 <= status_code <= 499:
+                self._handle_4xx(e.response)
+                logger.warning("_handle_4xx() fall through...")
+
+            # _handle_4xx() should have raised something more
+            # appropriate, or else we fallback to a default raise.
+            raise StravaError(repr(e) + " --- " + response.text)
+
         except requests.exceptions.RequestException as e:
-            logger.exception("Error doing request...")
             raise StravaError(repr(e) + " --- " + response.text)
 
     def athlete(self, token):
@@ -141,6 +182,12 @@ class StravaClient(object):
         Retrieve the with this token.
         """
         return self._api_v3_get_auth(token, "athlete")
+
+    def stats(self, token, id):
+        """
+        Retrieve the stats of the given athlete.
+        """
+        return self._api_v3_get_auth(token, "athletes/{}/stats".format(id))
 
     def activities(self, token, before=None, after=None, page=None, per_page=None):
         """

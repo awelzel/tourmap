@@ -1,4 +1,4 @@
-import json
+import datetime
 
 import dateutil.parser
 import hashids
@@ -7,6 +7,7 @@ from sqlalchemy.schema import Index, UniqueConstraint
 
 from tourmap.resources import db
 from tourmap.utils import seconds_to_readable_interval
+from tourmap.utils import json
 
 
 class HashidMixin(object):
@@ -37,9 +38,9 @@ class User(db.Model, HashidMixin):
     id = db.Column(db.Integer, primary_key=True)
     strava_id = db.Column(db.BigInteger, unique=True, nullable=False)
     email = db.Column(db.String(255), nullable=False)
-    firstname = db.Column(db.String(255), nullable=True)
-    lastname = db.Column(db.String(255), nullable=True)
-    country = db.Column(db.String(255), nullable=True)
+    firstname = db.Column(db.String(255))
+    lastname = db.Column(db.String(255))
+    country = db.Column(db.String(255))
 
     @property
     def name_str(self):
@@ -63,10 +64,10 @@ class Tour(db.Model, HashidMixin):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     user = db.relationship(User)
     name = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text)
 
-    start_date = db.Column(db.DateTime, nullable=True)
-    end_date = db.Column(db.DateTime, nullable=True)
+    start_date = db.Column(db.DateTime)
+    end_date = db.Column(db.DateTime)
 
     # Display settings
     tilelayer_provider = db.Column(db.String(16), nullable=True)
@@ -103,7 +104,7 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     strava_id = db.Column(db.BigInteger, unique=True, nullable=False)
-    external_id = db.Column(db.String(255), nullable=True)
+    external_id = db.Column(db.String(255))
     type = db.Column(db.String(32), nullable=False)
 
     name = db.Column(db.String(255), nullable=False)
@@ -189,7 +190,6 @@ class Activity(db.Model):
         self.type = src["type"]
         self.name = src.get("name", "")
 
-
         # Unify this to a single method!
         start_date = dateutil.parser.parse(src["start_date"])
         if start_date.tzinfo is not None:
@@ -257,6 +257,32 @@ class PollState(db.Model):
     last_fetch_completed_at = db.Column(db.DateTime)
 
     total_fetches = db.Column(db.BigInteger, default=0, nullable=False)
+
+    # State if anything bad has happened...
+    error_happened = db.Column(db.Boolean)
+    error_happened_at = db.Column(db.DateTime)
+    error_message = db.Column(db.String(255))
+    error_data = db.Column(db.Text)
+
+    def clear_error(self):
+        self.error_happened = False
+        self.error_happened_at = None
+        self.error_message = None
+        self._set_error_data({})
+
+    def set_error(self, message, error_data):
+        self.error_happened = True
+        self.error_happened_at = datetime.datetime.utcnow()
+        self.error_message = message
+        self._set_error_data(error_data)
+
+    def get_error_data(self):
+        if not self.error_data:
+            return {}
+        return json.loads(self.error_data)
+
+    def _set_error_data(self, error_data):
+        self.error_data = json.dumps(error_data)
 
     def __repr__(self):
         return "<PollState {}>".format(self.id)
