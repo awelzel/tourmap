@@ -106,19 +106,21 @@ def create_app(config=None):
         IPython.embed()
 
     @app.cli.command()
-    @click.option("--loglevel", default="info")
+    @click.option("--loglevel", default=None)
     def strava_poller(loglevel):
         from tourmap.resources import db, strava
         from tourmap.tasks import strava_poller
         from tourmap.config import configure_logging
 
-        if app.config["LOG_LEVEL"].upper() != loglevel.upper():
+        if loglevel and app.config["LOG_LEVEL"].upper() != loglevel.upper():
             app.config["LOG_LEVEL"] = loglevel
             configure_logging(app)
 
+        kwargs = strava_poller.StravaPoller.config_kwargs_from_env(environ=app.config)
         strava_poller = strava_poller.StravaPoller(
             session=db.session,
             strava_client_pool=strava._pool,
+            **kwargs,
         )
         try:
             strava_poller.run()

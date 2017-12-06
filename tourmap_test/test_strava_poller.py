@@ -70,13 +70,13 @@ class TestStravaPoller(tourmap_test.TestCase):
         result = self.strava_poller.fetch_activities(self.user, self.token, self.poll_state)
         self.strava_client_mock.activities.assert_called_once_with(
             page=1,
-            per_page=4,
+            per_page=20,
             token=self.token.access_token
         )
 
         self.assertTrue(result["state_update"]["full_fetch_completed"])
         self.assertEqual(2, result["state_update"]["full_fetch_next_page"])
-        self.assertEqual(4, result["state_update"]["full_fetch_per_page"])
+        self.assertEqual(20, result["state_update"]["full_fetch_per_page"])
         self.assertIsInstance(
             result["state_update"]["last_fetch_completed_at"],
             datetime.datetime

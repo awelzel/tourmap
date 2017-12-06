@@ -17,6 +17,7 @@ that the whole thing is extremly IO bound, so threads are just fine.
 import datetime
 from tourmap.utils import json
 import logging
+import os
 import queue
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -29,34 +30,54 @@ logger = logging.getLogger(__name__)
 
 class StravaPoller(object):
 
+    @staticmethod
+    def config_kwargs_from_env(environ=None, prefix="STRAVA_POLLER"):
+        """
+        Extract a dict of arguments from the enviroment that can be passed
+        as kwargs to the constructor of StravaPoller.
+        """
+        environ = environ or os.environ
+        settings = [
+            ["latest_fetch_interval_seconds", 5 * 60, int],
+            ["latest_fetch_lookback_days", 14, int],
+            ["full_fetch_interval_seconds", 30, int],
+            ["master_sleep_seconds", 2, float],
+        ]
+        result = {}
+        for s, default, cast_fun in settings:
+            environ_key = "{}_{}".format(prefix, s.upper())
+            result[s] = cast_fun(environ.get(environ_key, default))
+        return result
+
     def __init__(self, session, strava_client_pool,
-                 per_page_default=4, executor=None):
-        """
-        :param session: SQLAlchemy session
-        :param db: Session object to work with...
-        :param strava_client_constructor: How to construct StravaClient objects
-        :param executor: The executor to use, defaults to ThreadPoolExecutor()
-            with all defaults...
-        """
+                 full_fetch_per_page_default=20,
+                 full_fetch_interval_seconds=30,
+                 latest_fetch_interval_seconds=5 * 60,
+                 latest_fetch_lookback_days=14,
+                 latest_fetch_per_page=50,
+                 master_sleep_seconds=1,
+                 executor=None):
+
         self.__session = session
         self.__executor = executor or ThreadPoolExecutor(max_workers=4)  # !!!
         self.__result_futures = {}
         self.__strava_client_pool = strava_client_pool
-        self.__per_page_default = per_page_default
 
+        self.__full_fetch_per_page_default = full_fetch_per_page_default
+        self.__full_fetch_interval_seconds = full_fetch_interval_seconds
         # How often do we want to run the latest check?
         # XXX: Make these configurable!
-        self.__latest_interval_seconds = 5 * 60
-        self.__latest_lookback_seconds = 0
-        self.__latest_lookback_days = 14
-        self.__latest_lookback_per_page = 50
+        self.__latest_fetch_interval_seconds = latest_fetch_interval_seconds
+        self.__latest_fetch_lookback_days = latest_fetch_lookback_days
+        self.__latest_fetch_per_page = latest_fetch_per_page
+
+        self.__master_sleep_seconds = master_sleep_seconds
 
     def _sleep(self):
-        logger.debug("Sleep...")
         # XXX: We should either sleep until the executor finished a job,
         #      or a maximum time has elapesd. Maybe have an event queue
         #      that the master can sleep on?
-        time.sleep(5.0)
+        time.sleep(self.__master_sleep_seconds)
 
     def _now(self):
         return datetime.datetime.utcnow()
@@ -73,23 +94,22 @@ class StravaPoller(object):
 
           a) Those that where full_fetch_completed is False
           b) Those that havent't been polled since
-             self.__latest_interval_seconds...
+             self.__latest_fetch_interval_seconds...
           c) Filter a) and b) with self.__poll_states_submitted
 
         :returns: iterator over all poll states that match above
             criterias.
         """
-        full_fetch_in_progress = (
-            PollState.full_fetch_completed.is_(None)
-            | PollState.full_fetch_completed.is_(False)
+        dt = self._now() - datetime.timedelta(seconds=self.__full_fetch_interval_seconds)
+        needs_full_fetch = (
+            (PollState.full_fetch_completed.is_(None) | PollState.full_fetch_completed.is_(False))
+            & (PollState.last_fetch_completed_at.is_(None) | (PollState.last_fetch_completed_at < dt))
         )
-        last_fetch_before_dt = self._now() - datetime.timedelta(
-            seconds=self.__latest_interval_seconds
-        )
+
+        dt = self._now() - datetime.timedelta(seconds=self.__latest_fetch_interval_seconds)
         needs_latest_fetch = (
             PollState.full_fetch_completed.is_(True) & (
-                PollState.last_fetch_completed_at.is_(None)
-                | (PollState.last_fetch_completed_at < last_fetch_before_dt)
+                PollState.last_fetch_completed_at.is_(None) | (PollState.last_fetch_completed_at < dt)
             )
         )
         not_error = (
@@ -98,7 +118,7 @@ class StravaPoller(object):
         )
         query = (
             self.__session.query(PollState)
-            .filter((full_fetch_in_progress | needs_latest_fetch) & not_error)
+            .filter((needs_full_fetch | needs_latest_fetch) & not_error)
         )
         if self._has_submitted_ids():
             query = query.filter(PollState.id.notin_(self._get_submitted_ids()))
@@ -279,7 +299,7 @@ class StravaPoller(object):
         result_activities = []
         # Pages start at!
         page = poll_state.full_fetch_next_page or 1
-        per_page = poll_state.full_fetch_per_page or self.__per_page_default
+        per_page = poll_state.full_fetch_per_page or self.__full_fetch_per_page_default
         logger.info("Full fetch: for %s %s / page=%d", user, token, page)
 
         activities = list(client.activities(
@@ -293,6 +313,10 @@ class StravaPoller(object):
                 "activity": a,
                 "photos": result_photos,
             })
+
+        if len(result_activities) == 0:
+            logger.info("Full fetch for %s completed!", user)
+
         return {
             "activity_infos": result_activities,
             "state_update": {
@@ -312,10 +336,7 @@ class StravaPoller(object):
         result_activities = []
         now = self._now()
         last_fetch_completed_at = poll_state.last_fetch_completed_at or now
-        after_td = datetime.timedelta(
-            days=self.__latest_lookback_days,
-            seconds=self.__latest_lookback_seconds
-        )
+        after_td = datetime.timedelta(days=self.__latest_fetch_lookback_days)
         after_dt = last_fetch_completed_at - after_td
 
         # This can trigger if the poller hasn't completed this user in
@@ -331,17 +352,17 @@ class StravaPoller(object):
         activities = list(client.activities(
             token=token.access_token,
             after=after_ts,
-            per_page=self.__latest_lookback_per_page,
+            per_page=self.__latest_fetch_per_page,
         ))
 
-        if len(activities) >= self.__latest_lookback_per_page:
+        if len(activities) >= self.__latest_fetch_per_page:
             logger.warning("Latest fetch got per_page or more results. "
                            "This means we may have missed some activities. "
                            "per_page=%s len(activities)=%s",
                            self.__latest_lookback_per_page, len(activities))
 
         if len(activities) > 0:
-            logger.info("Got %s new activities for %s", user, len(activities))
+            logger.info("Got %s new activities for %s", len(activities), user)
 
         for a in self._activity_resource_state_filter(activities):
             result_photos = self._fetch_photos_for_activity(client, token, a)
