@@ -10,7 +10,7 @@ import tourmap.flask_strava as flask_strava
 import tourmap_test
 
 
-class StravaTest(tourmap_test.TestCase):
+class StravaLoginTest(tourmap_test.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -176,3 +176,27 @@ class StravaTest(tourmap_test.TestCase):
         response.assertStatusCode(200)
         response.assertDataContains(b"alert-danger")
         response.assertDataContains(b"Connect with Strava failed")
+
+    def test_strava_callback__clears_error(self):
+        query_string = {
+                "code": self.test_code,
+                "state": "state=CONNECT",
+        }
+        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
+        response = self.client.get("/strava/callback", query_string=query_string)
+        self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
+        response.assertIsRedirect(302, "/users/")
+
+        user = User.query.first()
+        user.poll_state.set_error("Fake poll state error", {"fake": "fake"})
+        tourmap_test.db.session.commit()
+        tourmap_test.db.session.expunge_all()
+
+        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
+        response = self.client.get("/strava/callback", query_string=query_string)
+        self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
+        response.assertIsRedirect(302, "/users/")
+
+        user = User.query.first()
+        self.assertFalse(user.poll_state.error_happened)
+        self.assertFalse(user.poll_state.error_message)
