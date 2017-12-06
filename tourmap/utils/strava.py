@@ -56,7 +56,6 @@ class StravaClient(object):
 
         if "timeout" not in kwargs:
             kwargs["timeout"] = self.__timeout
-        print("URL", url)
         response = self.__session.post(url, *args, **kwargs)
         try:
             response.raise_for_status()
