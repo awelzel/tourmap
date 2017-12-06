@@ -161,7 +161,7 @@ def create_user_blueprint(app):
     @bp.route("/")
     def index():
         return render_template("users/index.html",
-                               users=User.query.all())
+                               users=User.query.order_by(User.id))
 
     @bp.route("/<user_hashid>")
     def user(user_hashid):

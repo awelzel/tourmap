@@ -70,6 +70,7 @@ def create_blueprint(app):
         """
         XXX: This will break when there are many many tours.
         """
-        return render_template("tours/index.html", tours=Tour.query.all())
+        tours = Tour.query.order_by(Tour.id)
+        return render_template("tours/index.html", tours=tours)
 
     return bp
