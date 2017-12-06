@@ -8,7 +8,6 @@ this = sys.modules[__name__]
 
 # Force an overwrite!
 HASHIDS_SALT = None
-HEROKU = True
 
 __BOOLS = {
     "true": True,

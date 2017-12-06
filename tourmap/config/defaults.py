@@ -15,6 +15,3 @@ HASHIDS_MIN_LENGTH = 8
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 LOG_LEVEL = "info"
-
-# For environment checks???
-HEROKU = False
