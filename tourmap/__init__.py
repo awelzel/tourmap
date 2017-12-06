@@ -110,7 +110,12 @@ def create_app(config=None):
     def strava_poller(loglevel):
         from tourmap.resources import db, strava
         from tourmap.tasks import strava_poller
-        logging.basicConfig(level=getattr(logging, loglevel.upper()))
+        from tourmap.config import configure_logging
+
+        if app.config["LOG_LEVEL"].upper() != loglevel.upper():
+            app.config["LOG_LEVEL"] = loglevel
+            configure_logging(app)
+
         strava_poller = strava_poller.StravaPoller(
             session=db.session,
             strava_client_pool=strava._pool,

@@ -14,5 +14,7 @@ HASHIDS_MIN_LENGTH = 8
 # New default for Flask-SQLAlchemy
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+LOG_LEVEL = "info"
+
 # For environment checks???
 HEROKU = False

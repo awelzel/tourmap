@@ -1,11 +1,46 @@
 import logging
 import os
+import sys
 
 logger = logging.getLogger(__name__)
+
 
 def _is_heroku_env(environ=None):
     environ = os.environ if not environ else environ
     return "DYNO" in environ and "heroku" in os.environ.get("PATH", "")
+
+
+def configure_logging(app):
+    """
+    Configure the root logger and remove the crazy handlers from
+    app.logger and set the propagate flag of that logger, too.
+
+    This creates a bog standard stderr logger - this works best when
+    some other process (supervisord, systemd, etc.) captures the output
+    and writes it to file. We don't want to bother with opening files,
+    rotating them, etc.
+    """
+    loglevel = getattr(logging, app.config.get("LOG_LEVEL", "INFO").upper())
+    root_logger = logging.getLogger()
+
+    if root_logger.handlers:
+        logger.warning("Resetting root logger handlers!")
+        for h in root_logger.handlers[:]:
+            root_logger.removeHandler(h)
+
+    fmt = "%(levelname)s:[%(threadName)s|%(thread)d]:%(name)s: %(message)s"
+    formatter = logging.Formatter(fmt)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+    stream_handler.setLevel(loglevel)
+    root_logger.level = logging.NOTSET
+    root_logger.addHandler(stream_handler)
+
+    # Reset the app.logger setup
+    logger.info("Removing flask logger handlers...")
+    for h in app.logger.handlers[:]:
+        app.logger.removeHandler(h)
+    app.logger.propagate = True
 
 
 def configure_app(app, config=None):
@@ -31,6 +66,9 @@ def configure_app(app, config=None):
         config_pyfile = os.environ.get("CONFIG_PYFILE", "../config.py")
         logger.info("Reading local config %s...", config_pyfile)
         app.config.from_pyfile(config_pyfile)
+
+    # Setup proper logging...
+    configure_logging(app)
 
     # SQLAlchemy configuration...
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URL"]
