@@ -74,6 +74,7 @@ class Tour(db.Model, HashidMixin):
     polyline_color = db.Column(db.String(16), nullable=True)
     polyline_weight = db.Column(db.SmallInteger, nullable=True)
     marker_positioning = db.Column(db.String(16), nullable=True)
+    marker_enable_clusters = db.Column(db.Boolean, nullable=True)
 
     @property
     def activities(self):
@@ -91,6 +92,16 @@ class Tour(db.Model, HashidMixin):
     @property
     def end_date_str(self):
         return self.end_date.date().isoformat() if self.end_date is not None else ""
+
+    @staticmethod
+    def default_tour_for(user):
+        return Tour(
+            user=user,
+            name="All Activities",
+            marker_positioning="middle",
+            marker_enable_clusters=True,
+            description="Automatically created."
+        )
 
 
 User.tours = db.relationship(Tour, order_by=Tour.id)

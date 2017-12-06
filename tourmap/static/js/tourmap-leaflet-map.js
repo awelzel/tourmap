@@ -80,16 +80,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
       var marker = L.marker(markerLoc);
       _markers.push(marker);
 
-      // Ugly hack to downsize the photos and popups on small screens.
-      if ($(window).width() > 600) {
-        var photoColumns = 2;
-        var photoFactor = 1.0;
-      } else {
-        var photoColumns = 2;
-        var photoFactor = 0.5;
-      }
-
-      var content = _popupMaker(activity, photoColumns, photoFactor);
+      var content = _popupMaker(activity);
       var popup = L.popup({minWidth: 256, maxWidth: 256});
 
       popup.setContent(content);
@@ -124,7 +115,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
 
   function toggleMarkers() {
     var zoomLevel = _map.getZoom();
-    if (zoomLevel >= 7) {  // XXX: magic number...
+    if (zoomLevel >= 6) {  // XXX: magic number...
       placeMarkers();
     } else {
       removeMarkers();
@@ -140,7 +131,21 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
     // Register some handlers for updating the map
     $(window).resize(onResize);
 
-    _map.on('zoomend', toggleMarkers);
+
+    var enableMarkerClusters = mapSettings["markers"]["enable_clusters"]
+    var markerClusterOptions = {
+      "showCoverageOnHover": false,
+      "zoomToBoundsOnClick": false,
+    }
+    if (enableMarkerClusters) {
+      var cluster = L.markerClusterGroup(markerClusterOptions)
+      cluster.addLayers(_markers);
+      _map.addLayer(cluster);
+    } else {
+      // In case we do not use clusters, enable the zoomend event
+      // to decide if we need to place the clusters separately.
+      _map.on('zoomend', toggleMarkers);
+    }
 
     // This is just to remove the fullscreen container when clicked
     // on, but maybe that should go somewhere else altogether...

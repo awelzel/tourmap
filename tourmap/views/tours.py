@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, abort, request, current_app, redir
 from tourmap.models import Tour
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, TextAreaField, RadioField, SelectField
+from wtforms import StringField, DateField, TextAreaField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Optional
 
 class TourForm(FlaskForm):
@@ -35,6 +35,12 @@ class TourForm(FlaskForm):
         label="Marker Position",
         choices=[("end", "End"), ("middle", "Middle"), ("start", "Start")],
         default="end",
+        validators=[Optional()]
+    )
+    marker_enable_clusters = BooleanField(
+        label="Cluster Markers",
+        false_values=["no", "false", "0"],
+        default="no",
         validators=[Optional()]
     )
     polyline_color = SelectField(

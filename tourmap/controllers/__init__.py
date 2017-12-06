@@ -100,6 +100,7 @@ class TourController(object):
         polyline_color = tour.polyline_color or "red"
         polyline_weight = tour.polyline_weight or 5
         marker_positioning = tour.marker_positioning or "end"
+        marker_enable_clusters = True if tour.marker_enable_clusters else False
 
         result["tile_layer"] = {
             "provider": "mapbox",
@@ -119,6 +120,7 @@ class TourController(object):
 
         result["markers"] = {
             "positioning": marker_positioning,
+            "enable_clusters": marker_enable_clusters,
         }
 
         # Compute max bounds as percentage of the difference and some

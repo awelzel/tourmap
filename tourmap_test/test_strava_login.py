@@ -117,6 +117,8 @@ class StravaLoginTest(tourmap_test.TestCase):
         self.assertEqual(1, Tour.query.count())
         tour = Tour.query.first()
         self.assertEqual("All Activities", tour.name)
+        self.assertTrue(tour.marker_enable_clusters)
+        self.assertEqual("middle", tour.marker_positioning)
         user = User.query.first()
         self.assertEqual(user.id, tour.user_id)
 

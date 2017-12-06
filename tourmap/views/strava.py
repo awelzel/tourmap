@@ -35,12 +35,7 @@ class LoginController(object):
         if user is None:
             new_user = True
             user = User(strava_id=athlete["id"])
-            tour = Tour(
-                user=user,
-                name="All Activities",
-                marker_positioning="middle",
-                description="Automatically created."
-            )
+            tour = Tour.default_tour_for(user)
 
         user.email = athlete.get("email")
         user.firstname = athlete.get("firstname"),
