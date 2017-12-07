@@ -61,22 +61,16 @@ def create_app(config=None):
     assets.register(bundles)
 
 
-    # Install a view views...
-    from tourmap.views import strava
+    # Install a few views...
+    from tourmap.views import index, strava, tours, users
+    app.register_blueprint(index.create_blueprint(app))
     app.register_blueprint(strava.create_blueprint(app), url_prefix="/strava")
-    from tourmap.views import users
     app.register_blueprint(users.create_user_blueprint(app), url_prefix="/users")
-    app.register_blueprint(users.create_user_tours_blueprint(app), url_prefix="/users/<user_hashid>")
-    from tourmap.views import tours
+    app.register_blueprint(users.create_user_tours_blueprint(app),
+                           url_prefix="/users/<user_hashid>")
     app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
 
-    @app.route("/")
-    def index():
-        return render_template("index.html")
 
-    @app.route("/about")
-    def about():
-        return render_template("about.html")
     @app.after_request
     def add_cache_headers(response):
         # https://stackoverflow.com/a/2068407
