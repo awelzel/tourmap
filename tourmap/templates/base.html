@@ -72,6 +72,17 @@
 	</div>
     </div>
     </div>
+    {% if config["CLICKY_SITE_ID"] -%}
+    <!-- clicky tracking code -->
+    {% set clicky_site_id = config["CLICKY_SITE_ID"] -%}
+    <script src="//static.getclicky.com/js" type="text/javascript"></script>
+    <script type="text/javascript">try{ clicky.init({{ clicky_site_id }}); }catch(e){}</script>
+    <noscript>
+      <p>
+        <img alt="Clicky" width="1" height="1" src="//in.getclicky.com/{{ clicky_site_id }}.gif" />
+      </p>
+    </noscript>
+    {% endif -%}
     </body>
     {% block after_body -%}
     {% endblock -%}
