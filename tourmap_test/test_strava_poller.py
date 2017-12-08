@@ -43,11 +43,23 @@ class TestStravaPoller(tourmap_test.TestCase):
         states = list(self.strava_poller._get_poll_states())
         self.assertEqual(0, len(states))
 
-    def test_get_poll_states__exclude_error(self):
-        self.poll_state.set_error("Errors are excluded!", {})
+    def test_get_poll_states__include_error(self):
+        self.poll_state.set_error("Errors are included!", {})
+        self.poll_state.last_fetch_completed_at = None  # Reset the time
+        self.session.commit()
+        states = list(self.strava_poller._get_poll_states())
+        self.assertEqual(1, len(states))
+
+    def test_get_poll_states__exclude_stopped(self):
+        self.poll_state.stop()
         self.session.commit()
         states = list(self.strava_poller._get_poll_states())
         self.assertEqual(0, len(states))
+
+        self.poll_state.start()
+        self.session.commit()
+        states = list(self.strava_poller._get_poll_states())
+        self.assertEqual(1, len(states))
 
     def test_get_poll_states__single_state(self):
         states = list(self.strava_poller._get_poll_states())
@@ -143,10 +155,22 @@ class TestStravaPoller(tourmap_test.TestCase):
         self.assertAlmostEqual(-122.32, a.end_lng)
 
     def test_latest_fetch_bad_logging(self):
-        from tourmap_test.data import photos1_dict, activity1_dict
+        from tourmap_test.data import activity1_dict
 
         self.strava_client_mock.activities.return_value = [activity1_dict]
         self.strava_client_mock.activity_photos.return_value = []
+        self.strava_poller._latest_fetch(
+            self.strava_client_mock,
+            self.user,
+            self.token,
+            self.poll_state
+        )
+
+    def test_activity_photos__weird_sizes(self):
+        from tourmap_test.data import photos2_dict, activity1_dict
+
+        self.strava_client_mock.activities.return_value = [activity1_dict]
+        self.strava_client_mock.activity_photos.return_value = [photos2_dict]
         self.strava_poller._latest_fetch(
             self.strava_client_mock,
             self.user,
@@ -179,3 +203,16 @@ class TestStravaPoller(tourmap_test.TestCase):
         self.assertIn("Cache-Control", self.poll_state.error_data)
         code = self.poll_state.get_error_data()["response_data"]["errors"][0]["code"]
         self.assertEqual("invalid", code)
+
+    def test_process_result_future_unhandled_exception(self):
+        self.assertIsNone(self.poll_state.last_fetch_completed_at)
+        future = Future()
+        future.set_exception(Exception("unhandled"))
+        futures = {
+            self.poll_state.id: future,
+        }
+        self.strava_poller._process_result_futures(futures)
+
+        self.assertTrue(self.poll_state.error_happened)
+        self.assertIsNotNone(self.poll_state.last_fetch_completed_at)
+        self.assertFalse(self.poll_state.stopped)

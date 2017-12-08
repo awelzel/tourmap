@@ -179,7 +179,7 @@ class StravaLoginTest(tourmap_test.TestCase):
         response.assertDataContains(b"alert-danger")
         response.assertDataContains(b"Connect with Strava failed")
 
-    def test_strava_callback__clears_error(self):
+    def test_strava_callback__clears_error_and_starts(self):
         query_string = {
                 "code": self.test_code,
                 "state": "state=CONNECT",
@@ -191,6 +191,7 @@ class StravaLoginTest(tourmap_test.TestCase):
 
         user = User.query.first()
         user.poll_state.set_error("Fake poll state error", {"fake": "fake"})
+        user.poll_state.stop()
         tourmap_test.db.session.commit()
         tourmap_test.db.session.expunge_all()
 
@@ -202,3 +203,4 @@ class StravaLoginTest(tourmap_test.TestCase):
         user = User.query.first()
         self.assertFalse(user.poll_state.error_happened)
         self.assertFalse(user.poll_state.error_message)
+        self.assertFalse(user.poll_state.stopped)

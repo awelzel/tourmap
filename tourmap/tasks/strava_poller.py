@@ -112,13 +112,13 @@ class StravaPoller(object):
                 PollState.last_fetch_completed_at.is_(None) | (PollState.last_fetch_completed_at < dt)
             )
         )
-        not_error = (
-            PollState.error_happened.is_(None)
-            | PollState.error_happened.is_(False)
+        not_stopped = (
+            PollState.stopped.is_(None)
+            | PollState.stopped.is_(False)
         )
         query = (
             self.__session.query(PollState)
-            .filter((needs_full_fetch | needs_latest_fetch) & not_error)
+            .filter((needs_full_fetch | needs_latest_fetch) & not_stopped)
         )
         if self._has_submitted_ids():
             query = query.filter(PollState.id.notin_(self._get_submitted_ids()))
@@ -222,10 +222,12 @@ class StravaPoller(object):
                 # PollState to have an error...
                 logger.warning("Invalid access token for %s", poll_state.user)
                 poll_state.set_error(e.message, e.error_data)
+                poll_state.stop()
                 self.__session.commit()
             except Exception as e:
-                logger.exception("Job failed: %s", repr(e))
-                logger.error("Failing result: %s", json.dumps(result))
+                logger.exception("Job failed: %s %s", repr(e), json.dumps(result))
+                poll_state.set_error("Unhandled Error", repr(e))
+                self.__session.commit()
             finally:
                 futures.pop(poll_state_id)
 
@@ -272,7 +274,8 @@ class StravaPoller(object):
                 width, height = sizes[0]
 
                 if width != requested_size and height != requested_size:
-                    raise Exception("Got weird sizes {}".format(repr(sizes)))
+                    logger.info("Requested %s, got %s", requested_size, repr(sizes))
+
                 p["__tourmap_width"] = width
                 p["__tourmap_height"] = height
 

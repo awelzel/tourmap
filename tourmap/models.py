@@ -269,11 +269,14 @@ class PollState(db.Model):
 
     total_fetches = db.Column(db.BigInteger, default=0, nullable=False)
 
-    # State if anything bad has happened...
+    # State if something bad has happened...
     error_happened = db.Column(db.Boolean)
     error_happened_at = db.Column(db.DateTime)
     error_message = db.Column(db.String(255))
     error_data = db.Column(db.Text)
+
+    # If set do not pull from this anymore.
+    stopped = db.Column(db.Boolean)
 
     def clear_error(self):
         self.error_happened = False
@@ -282,10 +285,23 @@ class PollState(db.Model):
         self._set_error_data({})
 
     def set_error(self, message, error_data):
+        """
+        Record an error state. Note, this *also* sets last_fetch_completed_at,
+        as currently only a fetch can put the poll_state into an error.
+        This may or may not be clear, but if we do not set it, the poller
+        will pick up the failed poll_state again.
+
+        Note, we really should have a log table where all the errors are kept so
+        that we still have them after a clear_error()
+        """
+        now = datetime.datetime.utcnow()
         self.error_happened = True
-        self.error_happened_at = datetime.datetime.utcnow()
         self.error_message = message
         self._set_error_data(error_data)
+
+        # Set timestamps
+        self.error_happened_at = now
+        self.last_fetch_completed_at = now
 
     def get_error_data(self):
         if not self.error_data:
@@ -294,6 +310,12 @@ class PollState(db.Model):
 
     def _set_error_data(self, error_data):
         self.error_data = json.dumps(error_data)
+
+    def stop(self):
+        self.stopped = True
+
+    def start(self):
+        self.stopped = False
 
     def __repr__(self):
         return "<PollState {}>".format(self.id)

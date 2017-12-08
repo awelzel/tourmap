@@ -65,6 +65,7 @@ class LoginController(object):
         # Clear the error on a new login, assuming it was related to a
         # token issue which should be solved by a re-login!
         poll_state.clear_error()
+        poll_state.start()
 
         # Ok, go figure it out for us...
         self.__session.add_all([token, poll_state])

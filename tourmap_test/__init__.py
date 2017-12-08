@@ -16,7 +16,7 @@ from tourmap.models import User, Activity, ActivityPhotos, Tour
 from tourmap.resources import db
 from tourmap.utils import str2bool
 
-from .data import photos1_dict
+from .data import db_photos1_dict
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +146,7 @@ class TestCase(unittest.TestCase):
         self.photos1 = ActivityPhotos(
             user=self.user1,
             activity=self.activity1,
-            data=json.dumps(photos1_dict)
+            data=json.dumps(db_photos1_dict)
         )
 
         self.start_date2 = datetime.datetime(2016, 9, 26, 19, 27)
