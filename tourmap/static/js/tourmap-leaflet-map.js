@@ -135,7 +135,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
     var enableMarkerClusters = mapSettings["markers"]["enable_clusters"]
     var markerClusterOptions = {
       "showCoverageOnHover": false,
-      "zoomToBoundsOnClick": false,
+      "zoomToBoundsOnClick": true,
     }
     if (enableMarkerClusters) {
       var cluster = L.markerClusterGroup(markerClusterOptions)
