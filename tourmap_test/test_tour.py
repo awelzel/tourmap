@@ -23,6 +23,16 @@ class TestTour(tourmap_test.TestCase):
     def test_tours_index(self):
         response = self.client.get("/tours")
         response.assertStatusCode(200)
+        response.assertNotDataContains(b"User1 Test Tour")  # The tour is private
+
+    def test_tours_index_public(self):
+        # tour2 of user2 is public
+        db.session.add_all([self.user2, self.tour2])
+        db.session.commit()
+        response = self.client.get("/tours")
+        response.assertStatusCode(200)
+        response.assertNotDataContains(b"User1 Test Tour")
+        response.assertDataContains(b"User2 Test Tour")
 
     def test_users_tours_get_new_anonymous(self):
         # Wipe the session!

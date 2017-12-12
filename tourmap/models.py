@@ -76,6 +76,9 @@ class Tour(db.Model, HashidMixin):
     marker_positioning = db.Column(db.String(16), nullable=True)
     marker_enable_clusters = db.Column(db.Boolean, nullable=True)
 
+    # Privacy settings
+    public = db.Column(db.Boolean, default=False)
+
     @property
     def activities(self):
         query = Activity.query.filter_by(user=self.user)
@@ -102,6 +105,10 @@ class Tour(db.Model, HashidMixin):
             marker_enable_clusters=True,
             description="Automatically created."
         )
+
+    @staticmethod
+    def get_public_tours():
+        return Tour.query.filter(Tour.public.is_(True))
 
 
 User.tours = db.relationship(Tour, order_by=Tour.id)

@@ -33,11 +33,14 @@
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
             <li><a href="{{ url_for("index.index") }}">Home</a></li>
+            {# XXX: turn off the user list, because some people may
+                    not like it
             <li><a href="{{ url_for("users.index") }}">All Users</a></li>
-            <li><a href="{{ url_for("tours.index") }}">All Tours</a></li>
+            #}
+            <li><a href="{{ url_for("tours.index") }}">Public Tours</a></li>
             {% if current_user.is_authenticated -%}
             {# This only works for the UserProxy!!! #}
-            <li><a href="{{ current_user.url }}"><b>{{ current_user.name_str }}</b></a></li>
+            <li><a href="{{ current_user.url }}"><b>You ({{ current_user.name_str }})</b></a></li>
             {% endif %}
           </ul>
           <ul class="nav navbar-nav navbar-right">

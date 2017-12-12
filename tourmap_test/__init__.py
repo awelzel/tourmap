@@ -125,7 +125,7 @@ class TestCase(unittest.TestCase):
         self.user1 = User(strava_id=123, email="first@strava.com")
         self.tour1 = Tour(user=self.user1, name="User1 Test Tour")
         self.user2 = User(strava_id=124, email="second@strava.com")
-        self.tour2 = Tour(user=self.user2, name="User2 Test Tour")
+        self.tour2 = Tour(user=self.user2, name="User2 Test Tour", public=True)
         self.start_date1 = datetime.datetime(2017, 10, 18, 8, 30)
         self.start_date_local1 = datetime.datetime(2017, 10, 18, 10, 30)
         self.utc_offset1 = 7200

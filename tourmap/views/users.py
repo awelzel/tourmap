@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for, flash, escape
 from flask_login import current_user, login_required
 
-from tourmap.views.tours import TourForm
-
 from tourmap import database
+from tourmap.forms import TourForm
 from tourmap.models import User, Tour, Activity
 from tourmap.resources import db
 
