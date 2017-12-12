@@ -32,11 +32,10 @@ class TestTour(tourmap_test.TestCase):
         response.assertStatusCode(200)
         response.assertDataContains("{}/activities".format(self.user1.hashid).encode("ascii"))
 
-    def test_user_view_different_user(self):
+    def test_user_view_different_user_403(self):
         url = "/users/{}".format(self.user2.hashid)
         response = self.client.get(url)
-        response.assertStatusCode(200)
-        response.assertNotDataContains("{}/activities".format(self.user2.hashid).encode("ascii"))
+        response.assertStatusCode(403)
 
     def test_all_activities_different_user_403(self):
         url = "/users/{}/activities".format(self.user2.hashid)

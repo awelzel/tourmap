@@ -157,16 +157,22 @@ def create_user_tours_blueprint(app):
 def create_user_blueprint(app):
     bp = Blueprint("users", __name__)
 
-    @bp.route("/")
-    def index():
-        return render_template("users/index.html",
-                               users=User.query.order_by(User.id))
+    # It is not clear this is nice...
+    #
+    # @bp.route("/")
+    # def index():
+    #    return render_template("users/index.html",
+    #                           users=User.query.order_by(User.id))
 
     @bp.route("/<user_hashid>")
+    @login_required
     def user(user_hashid):
         user = User.get_by_hashid(user_hashid)
         if user is None:
             abort(404)
+
+        if user != current_user:
+            abort(403)
 
         recent_activities = (Activity.query
                              .filter_by(user=user)
@@ -178,6 +184,7 @@ def create_user_blueprint(app):
                                recent_activities=recent_activities)
 
     @bp.route("/<user_hashid>/activities")
+    @login_required
     def user_activities(user_hashid):
         user = User.get_by_hashid(user_hashid)
         if user is None:
