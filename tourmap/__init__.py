@@ -51,6 +51,7 @@ def create_app(config=None):
             "css/lib/leaflet-1.2.0.css",
             "css/lib/leaflet-markercluster-1.2.0.css",
             "css/lib/leaflet-markercluster-default-1.2.0.css",
+            "css/tourmap.css",
             output="gen/map.css"
         ),
         "tourmap_leaflet_map_js": Bundle(

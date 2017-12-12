@@ -1,7 +1,7 @@
 "use strict";
 
 var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
-  var _map = L.map(mapId);
+  var _map = L.map(mapId, {zoomControl: false});
   var _mapElement = $("#" + mapId);
   var _activities = activities;
   var _mapSettings = mapSettings;
@@ -81,7 +81,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
       _markers.push(marker);
 
       var content = _popupMaker(activity);
-      var popup = L.popup({minWidth: 256, maxWidth: 256});
+      var popup = L.popup({minWidth: 200, maxWidth: 200});
 
       popup.setContent(content);
       marker.bindPopup(popup);
@@ -184,7 +184,7 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
  */
 function simplePopupForActivity(a) {
   var photoColumns = 2;
-  var photoFactor = 0.5;
+  var photoFactor = 0.3906;  // 256 * 0.3906 ~ 100!
   var popupRoot = document.createElement("div");
   $(popupRoot).addClass("activity-popup");
   var popupTitle = document.createElement("h5");
