@@ -3,7 +3,7 @@ import logging
 
 import click
 
-from flask import Flask, render_template, abort
+from flask import Flask, render_template, abort, request
 from flask_assets import Environment, Bundle
 
 from flask_login import LoginManager
@@ -73,10 +73,15 @@ def create_app(config=None):
 
     @app.after_request
     def add_cache_headers(response):
-        # https://stackoverflow.com/a/2068407
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate" # HTTP 1.1.
-        response.headers["Pragma"] = "no-cache" # HTTP 1.0.
-        response.headers["Expires"] = "0" # Proxies.
+        """
+        Make sure we cache static files, but nothing else.
+        """
+            # https://stackoverflow.com/a/2068407
+        if not request.path.startswith(app.static_url_path):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate" # HTTP 1.1.
+            response.headers["Pragma"] = "no-cache" # HTTP 1.0.
+            response.headers["Expires"] = "0" # Proxies.
+
         return response
 
 
