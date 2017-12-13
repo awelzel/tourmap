@@ -99,7 +99,7 @@ def create_blueprint(app):
         Do a logout.
         """
         flask_login.logout_user()
-        return redirect(url_for("index"))
+        return redirect(url_for("index.index"))
 
     @bp.route("/callback")
     def callback():
