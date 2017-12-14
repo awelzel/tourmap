@@ -1,7 +1,9 @@
 "use strict";
 
 var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
-  var _map = L.map(mapId, {zoomControl: false});
+
+  var _zoomDelta = 0.5;
+  var _zoomSnap = 0.25;
   var _mapElement = $("#" + mapId);
   var _activities = activities;
   var _mapSettings = mapSettings;
@@ -13,6 +15,12 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
 
   var _currentMapHeight = 0;
 
+  /* Initialize the map... */
+  var _map = L.map(mapId, {
+    zoomControl: false,
+    zoomSnap: _zoomSnap,
+    zoomDelta: _zoomDelta,
+  });
 
   function viewSetup() {
     var corner1 = L.latLng(_mapSettings["bounds"]["corner1"]);
@@ -28,8 +36,8 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
   };
 
   function fitBounds() {
-    var maxCorner1 = L.latLng(_mapSettings["max_bounds"]["corner1"]);
-    var maxCorner2 = L.latLng(_mapSettings["max_bounds"]["corner2"]);
+    var maxCorner1 = L.latLng(_mapSettings["bounds"]["corner1"]);
+    var maxCorner2 = L.latLng(_mapSettings["bounds"]["corner2"]);
     _map.fitBounds([maxCorner1, maxCorner2], {animate: false});
   };
 
@@ -164,7 +172,8 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
     function _fitBoundsCompleted() {
         _map.off("zoomend", _fitBoundsCompleted);
         var fittedZoomLevel = _map.getZoom();
-        _map.setMinZoom(fittedZoomLevel);
+        var minZoomLevel = fittedZoomLevel - _zoomDelta;
+        _map.setMinZoom(minZoomLevel);
     };
     _map.on('zoomend', _fitBoundsCompleted)
     fitBounds();
