@@ -96,7 +96,7 @@ class TourController(object):
     def get_map_settings(self, tour, prepared_activities):
         result = {}
 
-        tile_layer_id = "mapbox.streets"
+        tile_layer_id = "mapbox.run-bike-hike"
         polyline_color = tour.polyline_color or "red"
         polyline_weight = tour.polyline_weight or 5
         marker_positioning = tour.marker_positioning or "end"
