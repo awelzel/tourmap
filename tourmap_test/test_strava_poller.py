@@ -79,7 +79,7 @@ class TestStravaPoller(tourmap_test.TestCase):
 
     def test_fetch_activities__full_fetch_mode(self):
         self.strava_client_mock.activities.return_value = []
-        result = self.strava_poller.fetch_activities(self.user, self.token, self.poll_state)
+        result = self.strava_poller.fetch_activities(self.user.id, self.token.access_token, self.poll_state)
         self.strava_client_mock.activities.assert_called_once_with(
             page=1,
             per_page=20,
@@ -103,7 +103,7 @@ class TestStravaPoller(tourmap_test.TestCase):
 
         expected_after_ts = dt2ts(last_fetch_completed_at - datetime.timedelta(days=14))
         self.strava_client_mock.activities.return_value = []
-        result = self.strava_poller.fetch_activities(self.user, self.token, self.poll_state)
+        result = self.strava_poller.fetch_activities(self.user.id, self.token.access_token, self.poll_state)
         self.strava_client_mock.activities.assert_called_once_with(
             after=expected_after_ts,
             token=self.token.access_token,

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def create_app(config=None):
     app = Flask(__name__)
 
-    # Load default configuration that is with the application
+    # Load default configuration
     app = tourmap.config.configure_app(app, config=config)
 
     # Login manager stuff...

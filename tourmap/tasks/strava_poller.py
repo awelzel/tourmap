@@ -14,19 +14,28 @@ The main thread polls the database in regular intervals to find users with:
 It then submits the tasks to a ThreadPoolExecutor to work on. The idea is
 that the whole thing is extremly IO bound, so threads are just fine.
 """
+import collections
 import datetime
-from tourmap.utils import json
 import logging
 import os
-import queue
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 from tourmap.models import PollState, Activity, ActivityPhotos
-from tourmap.utils import dt2ts
+from tourmap.utils import dt2ts, json
 from tourmap.utils.strava import InvalidAthleteAccessToken
 
 logger = logging.getLogger(__name__)
+
+
+PollStateData = collections.namedtuple("PollStateData", [
+    "full_fetch_completed",
+    "full_fetch_next_page",
+    "full_fetch_per_page",
+    "last_fetch_completed_at",
+    "total_fetches",
+])
+
 
 class StravaPoller(object):
 
@@ -47,12 +56,12 @@ class StravaPoller(object):
         for s, default, cast_fun in settings:
             environ_key = "{}_{}".format(prefix, s.upper())
             result[s] = cast_fun(environ.get(environ_key, default))
+        logger.info("config=%s", repr(result))
         return result
 
     def __init__(self, session, strava_client_pool,
                  full_fetch_per_page_default=20,
-                 full_fetch_interval_seconds=30,
-                 latest_fetch_interval_seconds=5 * 60,
+                 full_fetch_interval_seconds=30, latest_fetch_interval_seconds=5 * 60,
                  latest_fetch_lookback_days=14,
                  latest_fetch_per_page=50,
                  master_sleep_seconds=1,
@@ -65,8 +74,6 @@ class StravaPoller(object):
 
         self.__full_fetch_per_page_default = full_fetch_per_page_default
         self.__full_fetch_interval_seconds = full_fetch_interval_seconds
-        # How often do we want to run the latest check?
-        # XXX: Make these configurable!
         self.__latest_fetch_interval_seconds = latest_fetch_interval_seconds
         self.__latest_fetch_lookback_days = latest_fetch_lookback_days
         self.__latest_fetch_per_page = latest_fetch_per_page
@@ -132,12 +139,22 @@ class StravaPoller(object):
         them to the executor...
         """
         for poll_state in self._get_poll_states():
+            if not poll_state.user.token:
+                logger.debug("Skipping %s without token", poll_state.user)
+                continue
+
             submit_kwargs = {
-                "user": poll_state.user,
-                "token": poll_state.user.token,
-                "poll_state": poll_state,
+                "user_id": poll_state.user.id,
+                "access_token": poll_state.user.token.access_token,
+                "poll_state": PollStateData(
+                    full_fetch_completed=poll_state.full_fetch_completed,
+                    full_fetch_next_page=poll_state.full_fetch_next_page,
+                    full_fetch_per_page=poll_state.full_fetch_per_page,
+                    last_fetch_completed_at=poll_state.last_fetch_completed_at,
+                    total_fetches=poll_state.total_fetches
+                )
             }
-            logger.debug("Submitting: %s", repr(submit_kwargs))
+            logger.info("Submitting job for %s", poll_state.user)
             assert poll_state.id not in self.__result_futures
             future = executor.submit(self.fetch_activities, **submit_kwargs)
             self.__result_futures[poll_state.id] = future
@@ -252,7 +269,7 @@ class StravaPoller(object):
             if not self._process_result_futures(self.__result_futures):
                 self._sleep()
 
-    def _fetch_photos_for_activity(self, client, token, activity):
+    def _fetch_photos_for_activity(self, client, access_token, activity):
         """
         Fetch photos for two sizes with some error checking.
         """
@@ -264,7 +281,7 @@ class StravaPoller(object):
             return result_photos
 
         for requested_size in requested_sizes:
-            photos = client.activity_photos(token.access_token, activity["id"],
+            photos = client.activity_photos(access_token, activity["id"],
                                             size=requested_size)
             logger.debug("Got %d photos for size %d", len(photos), requested_size)
             for p in photos:
@@ -291,7 +308,7 @@ class StravaPoller(object):
                 continue
             yield a
 
-    def _full_fetch(self, client, user, token, poll_state):
+    def _full_fetch(self, client, user_id, access_token, poll_state):
         """
         Do a single page based fetch iteration.
 
@@ -303,22 +320,22 @@ class StravaPoller(object):
         # Pages start at!
         page = poll_state.full_fetch_next_page or 1
         per_page = poll_state.full_fetch_per_page or self.__full_fetch_per_page_default
-        logger.info("Full fetch: for %s %s / page=%d", user, token, page)
+        logger.info("Full fetch: for user_id=%s / page=%d", user_id, page)
 
         activities = list(client.activities(
-            token=token.access_token,
+            token=access_token,
             page=page,
             per_page=per_page
         ))
         for a in self._activity_resource_state_filter(activities):
-            result_photos = self._fetch_photos_for_activity(client, token, a)
+            result_photos = self._fetch_photos_for_activity(client, access_token, a)
             result_activities.append({
                 "activity": a,
                 "photos": result_photos,
             })
 
         if len(result_activities) == 0:
-            logger.info("Full fetch for %s completed!", user)
+            logger.info("Full fetch for user_id=%s completed!", user_id)
 
         return {
             "activity_infos": result_activities,
@@ -331,11 +348,11 @@ class StravaPoller(object):
             },
         }
 
-    def _latest_fetch(self, client, user, token, poll_state):
+    def _latest_fetch(self, client, user_id, access_token, poll_state):
         """
         Fetch the past X days and update everything.
         """
-        logger.info("Latest fetch: %s %s", user, token)
+        logger.info("Latest fetch: user_id=%s", user_id)
         result_activities = []
         now = self._now()
         last_fetch_completed_at = poll_state.last_fetch_completed_at or now
@@ -346,14 +363,14 @@ class StravaPoller(object):
         # one day or so...
         if now - after_dt > (after_td + datetime.timedelta(days=1)):
             logger.warning("Probably missed some stuff and should trigger "
-                           "a full fetch for %s %s now=%s after_dt=%s",
-                           user, poll_state, now.isoformat(), after_dt.isoformat())
+                           "a full fetch for user_id=%s %s now=%s after_dt=%s",
+                           user_id, poll_state, now.isoformat(), after_dt.isoformat())
 
         after_ts = dt2ts(after_dt)
 
         logger.debug("Fetching activities after %s (%s)", after_dt.isoformat(), after_ts)
         activities = list(client.activities(
-            token=token.access_token,
+            token=access_token,
             after=after_ts,
             per_page=self.__latest_fetch_per_page,
         ))
@@ -362,13 +379,13 @@ class StravaPoller(object):
             logger.warning("Latest fetch got per_page or more results. "
                            "This means we may have missed some activities. "
                            "per_page=%s len(activities)=%s",
-                           self.__latest_lookback_per_page, len(activities))
+                           self.__latest_fetch_per_page, len(activities))
 
         if len(activities) > 0:
-            logger.info("Got %s new activities for %s", len(activities), user)
+            logger.info("Got %s new activities for %s", len(activities), user_id)
 
         for a in self._activity_resource_state_filter(activities):
-            result_photos = self._fetch_photos_for_activity(client, token, a)
+            result_photos = self._fetch_photos_for_activity(client, access_token, a)
             result_activities.append({
                 "activity": a,
                 "photos": result_photos,
@@ -381,18 +398,18 @@ class StravaPoller(object):
             },
         }
 
-    def _fetch_activities(self, client, user, token, poll_state):
+    def _fetch_activities(self, client, user_id, access_token, poll_state):
         """
         Dispatch between doing a full fetch or a latest fetch depending
         on the poll_state.
         """
         if not poll_state.full_fetch_completed:
-            return self._full_fetch(client, user, token, poll_state)
-        return self._latest_fetch(client, user, token, poll_state)
+            return self._full_fetch(client, user_id, access_token, poll_state)
+        return self._latest_fetch(client, user_id, access_token, poll_state)
 
-    def fetch_activities(self, user, token, poll_state):
+    def fetch_activities(self, user_id, access_token, poll_state):
         """
         :returns: list results with { "activity": {strava}, "activity_photos": {strava}
         """
         with self.__strava_client_pool.use() as client:
-            return self._fetch_activities(client, user, token, poll_state)
+            return self._fetch_activities(client, user_id, access_token, poll_state)
