@@ -7,25 +7,20 @@ A demo is running at https://tourmapp.herokuapp.com
 
 # Running
 
-## Install Python 3 virtualenv
-
-    # On Debian
-    $ sudo apt-get install python3-venv
-
-## Initialize, activate and populate a venv
+## Initialize, activate and populate a Python 3 virtualenv
 
     $ pyvenv venv
     $ . ./venv/bin/activate
     $ pip install pip --upgrade
     $ pip install -r ./requirements.txt
 
+## Run some tests
+
+    $ ./test.sh
+
 ## Install js/css stuff (jquery, bootstrap, leaflet)
 
     $ npm install
-
-## Run tests
-
-    $ python -m unittest discover tourmap_test/
 
 ## Create a config file
 
