@@ -35,9 +35,13 @@ tourmapp - show multiple Strava rides on a single map
         --eager-loading --with-threads
 
 
+## Running the strava_poller process
 
-## The ``public`` flag:
+This process fetches activities from Strava users that logged through with
+their Strava credentials.
 
-The only effect of an unset ``public`` flag is that this tour will not be
-listed in the Public Tours section. And that's it. Anyone who has a direct
-link to the tour can visit and see it.
+    $ . venv/bin/activate
+    $ FLASK_APP=tourmap/app.py flask strava_poller
+
+The way it currently fetches Strava activities should work for a few users,
+but may need to be reworked when many users log in.
