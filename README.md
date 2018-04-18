@@ -1,28 +1,40 @@
+tourmapp - show multiple Strava rides on a single map
 
+
+# Running
 
 ## Install Python 3 virtualenv
 
-  $ sudo apt-get install python3-venv
+    # On Debian
+    $ sudo apt-get install python3-venv
 
-## Initialize and activate the virtual environment:
+## Initialize, activate and populate a venv
 
     $ pyvenv venv
     $ . ./venv/bin/activate
     $ pip install pip --upgrade
+    $ pip install -r ./requirements.txt
 
-## Running the server
+## Run tests
 
-    # source some variables
-    $ set -a
-    $ . ENV
-    $ set +a
+    $ python -m unittest discover tourmap_test/
 
-    $ FLASK_APP=tourmap/app.py flask run --reload -h 0.0.0.0 --eager-loading --with-threads
+## Create a config file
 
-## Database new tables
+    $ cp config.py.template config.py
+    # Update config settings...
+    $ vim config.py
+
+## Create the database tables
 
     $ FLASK_APP=tourmap/app.py flask createdb
-    $ FLASK_APP=tourmap/app.py flask resetdb
+
+## Run the flask server
+
+    $ FLASK_APP=tourmap/app.py flask run --reload -h 0.0.0.0 \
+        --eager-loading --with-threads
+
+
 
 ## The ``public`` flag:
 

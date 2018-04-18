@@ -7,9 +7,6 @@ import unittest
 
 import flask
 import flask.wrappers
-import lxml.html
-import lxml.etree
-
 
 import tourmap
 from tourmap.models import User, Activity, ActivityPhotos, Tour
@@ -21,8 +18,8 @@ from .data import db_photos1_dict
 logger = logging.getLogger(__name__)
 
 TEST_CONFIG = {
-        # "DATABASE_URL": "sqlite://test.db",
-        "DATABASE_URL": "postgresql:///tourmap_test",
+        "DATABASE_URL": "sqlite:///test.db",
+        # "DATABASE_URL": "postgresql:///tourmap_test",
         "STRAVA_CLIENT_ID": "-1",
         "STRAVA_CLIENT_SECRET": "TEST",
         "TESTING": True,
@@ -47,9 +44,9 @@ class TestableResponse(flask.wrappers.Response):
         """
         Run the Python provided html parser over data and see if it crashed.
         """
-        html_parser = lxml.etree.HTMLParser(recover=False)
-        return lxml.html.document_fromstring(self.data, parser=html_parser,
-                                             ensure_head_body=True)
+        self.assertDataContains(b"<html>")
+        self.assertDataContains(b"<head>")
+        self.assertDataContains(b"<body>")
 
     def assertDataContains(self, s):
         if s not in self.data:
