@@ -22,6 +22,8 @@ TEST_CONFIG = {
         # "DATABASE_URL": "postgresql:///tourmap_test",
         "STRAVA_CLIENT_ID": "-1",
         "STRAVA_CLIENT_SECRET": "TEST",
+        "HASHIDS_SALT": "TEST",
+        "HASHIDS_MIN_LENGTH": 4,
         "TESTING": True,
         "SECRET_KEY": "TEST",
         "WTF_CSRF_ENABLED": False,

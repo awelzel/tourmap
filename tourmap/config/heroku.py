@@ -31,9 +31,3 @@ for k, v in os.environ.items():
         pass
 
     setattr(this, k, v)
-
-
-# Check for some required settings...
-
-if not HASHIDS_SALT:
-    raise Exception("HASHIDS_SALT environment not set")

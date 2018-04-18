@@ -77,8 +77,14 @@ def configure_app(app, config=None):
     from tourmap.resources import strava
     strava.init_app(app)
 
-    # Check if the mapbox access token is available, else crash
-    if "MAPBOX_ACCESS_TOKEN" not in app.config or not app.config["MAPBOX_ACCESS_TOKEN"]:
-        raise RuntimeError("It appears MAPBOX_ACCESS_TOKEN was not set")
+    # Check for some required settings and else crash
+    REQUIRED_SETTINGS = [
+        "MAPBOX_ACCESS_TOKEN",
+        "SECRET_KEY",
+        "HASHIDS_SALT",
+    ]
+    for setting in REQUIRED_SETTINGS:
+        if setting not in app.config or not app.config[setting]:
+            raise RuntimeError("It appears {} was not set".format(setting))
 
     return app
