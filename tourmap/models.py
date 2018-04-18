@@ -74,10 +74,12 @@ class Tour(db.Model, HashidMixin):
     polyline_color = db.Column(db.String(16), nullable=True)
     polyline_weight = db.Column(db.SmallInteger, nullable=True)
     marker_positioning = db.Column(db.String(16), nullable=True)
-    marker_enable_clusters = db.Column(db.Boolean, nullable=True)
+    marker_enable_clusters = db.Column(
+        db.Boolean(name="marker_enable_clusters"), nullable=True
+    )
 
     # Privacy settings
-    public = db.Column(db.Boolean, default=False)
+    public = db.Column(db.Boolean(name="public"), default=False)
 
     @property
     def activities(self):
@@ -271,19 +273,21 @@ class PollState(db.Model):
     # we may miss some... Lets ignore for now and allow to trigger refetching.
     full_fetch_next_page = db.Column(db.SmallInteger)
     full_fetch_per_page = db.Column(db.SmallInteger)
-    full_fetch_completed = db.Column(db.Boolean, default=False)
+    full_fetch_completed = db.Column(
+        db.Boolean(name="full_fetch_completed"), default=False
+    )
     last_fetch_completed_at = db.Column(db.DateTime)
 
     total_fetches = db.Column(db.BigInteger, default=0, nullable=False)
 
     # State if something bad has happened...
-    error_happened = db.Column(db.Boolean)
+    error_happened = db.Column(db.Boolean(name="error_happened"))
     error_happened_at = db.Column(db.DateTime)
     error_message = db.Column(db.String(255))
     error_data = db.Column(db.Text)
 
     # If set do not pull from this anymore.
-    stopped = db.Column(db.Boolean)
+    stopped = db.Column(db.Boolean(name="stopped"))
 
     def clear_error(self):
         self.error_happened = False
