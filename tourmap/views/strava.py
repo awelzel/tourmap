@@ -22,7 +22,8 @@ class LoginController(object):
 
     def strava_login(self, data):
         """
-        Given data from a Strava token exchange, either update or create a new.
+        Given data from a Strava token exchange, either update
+        an existing user, or create a new one.
 
         :param data: as returned by a token exchange from Strava.
         :returns: tuple representing (new_user, user)
@@ -38,7 +39,7 @@ class LoginController(object):
             tour = Tour.default_tour_for(user)
 
         user.email = athlete.get("email")
-        user.firstname = athlete.get("firstname"),
+        user.firstname = athlete.get("firstname")
         user.lastname = athlete.get("lastname")
         user.country = athlete.get("country")
 
