@@ -1,4 +1,8 @@
-tourmapp - show multiple Strava rides on a single map
+# tourmapp
+
+Show multiple Strava rides on a single map.
+
+A demo is running at https://tourmapp.herokuapp.com
 
 
 # Running
@@ -45,3 +49,11 @@ their Strava credentials.
 
 The way it currently fetches Strava activities should work for a few users,
 but may need to be reworked when many users log in.
+
+# Sample Images
+
+## Overview of a tour
+![Zoomed-out](img/zoomout.png?raw=true)
+
+## Zoomed-in with popup
+![Zoomed-in and expanded popup](img/zoomin.png?raw=true)

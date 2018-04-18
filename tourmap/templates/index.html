@@ -6,11 +6,8 @@
   <div class="col-sm-12">
     <p>Hey there!</p>
     <p>
-      This is <em>{{ config.APP_NAME }}</em> - something that was built
-      to show off how far I have cycled.
-    </p>
-    <p>
-      It puts all Strava activities of a given time frame onto a single map.
+      This is <em>{{ config.APP_NAME }}</em> - it shows multiple Strava
+      rides on a single map.
     </p>
     {% if example_tour -%}
     {% set map_link = url_for("user_tours.tour",
