@@ -1,0 +1,6 @@
+{
+  "name": "tourmapp",
+  "scripts": {
+    "prepare": "cd tourmap/static && npm install"
+  }
+}

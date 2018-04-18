@@ -19,6 +19,10 @@ A demo is running at https://tourmapp.herokuapp.com
     $ pip install pip --upgrade
     $ pip install -r ./requirements.txt
 
+## Install js/css stuff (jquery, bootstrap, leaflet)
+
+    $ npm install
+
 ## Run tests
 
     $ python -m unittest discover tourmap_test/

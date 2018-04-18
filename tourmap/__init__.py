@@ -31,26 +31,26 @@ def create_app(config=None):
     assets = Environment(app)
     bundles = {
         "base_js": Bundle(
-            "js/lib/jquery-3.2.1.js",
-            "js/lib/bootstrap-3.3.7.js",
+            "node_modules/jquery/dist/jquery.js",
+            "node_modules/bootstrap/dist/js/bootstrap.js",
             "js/tourmap.js",
             output="gen/tourmap.js"
         ),
         "css": Bundle(
-            "css/lib/bootstrap-3.3.7.css",
-            "css/lib/bootstrap-theme-3.3.7.css",
+            "node_modules/bootstrap/dist/css/bootstrap.css",
+            "node_modules/bootstrap/dist/css/bootstrap-theme.css",
             "css/tourmap.css",
             output="gen/tourmap.css"
         ),
         "map_js": Bundle(
-            "js/lib/leaflet-1.2.0.js",
-            "js/lib/leaflet-markercluster-1.2.0.js",
+            "node_modules/leaflet/dist/leaflet.js",
+            "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js",
             output="gen/map.js"
         ),
         "map_css": Bundle(
-            "css/lib/leaflet-1.2.0.css",
-            "css/lib/leaflet-markercluster-1.2.0.css",
-            "css/lib/leaflet-markercluster-default-1.2.0.css",
+            "node_modules/leaflet/dist/leaflet.css",
+            "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
+            "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
             "css/tourmap.css",
             output="gen/map.css"
         ),

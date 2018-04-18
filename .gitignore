@@ -6,4 +6,5 @@
 
 **/static/.webassets-cache/
 **/static/gen/
+**/node_modules/
 __pycache__/
