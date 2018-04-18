@@ -1,0 +1,9 @@
+/config.py
+/venv/
+*.db
+*.swp
+
+
+**/static/.webassets-cache/
+**/static/gen/
+__pycache__/
