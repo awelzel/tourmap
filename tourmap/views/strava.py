@@ -3,7 +3,6 @@ Strava OAUTH flow hacked together.
 """
 from urllib.parse import urlunparse, urlencode, parse_qsl
 
-import dateutil.parser
 from flask import Blueprint, redirect, request, url_for, render_template, abort, current_app, flash
 import flask_login
 
@@ -12,6 +11,7 @@ import tourmap.utils.strava
 from tourmap import database
 from tourmap import resources
 from tourmap.models import User, PollState, Token, Tour
+
 
 class LoginController(object):
     """
@@ -177,34 +177,5 @@ def create_blueprint(app):
             state=urlencode(state),
             approval_prompt="auto"
         ))
-
-    @bp.route("/proxy/<int:user_id>/activities")
-    def activities(user_id):
-        user = User.query.get_or_404(user_id)
-        token = Token.query.filter_by(user_id=user.id).one_or_none()
-        if token is None:
-            abort(404)
-
-        page = int(request.args.get("page")) if "page" in request.args else None
-
-        try:
-            activities = resources.strava.client.activities(
-                token=token.access_token,
-                page=page
-            )
-        except tourmap.utils.strava.StravaTimeout:
-            app.logger.warning("Strava timeout...")
-            abort(504)
-
-        cleaned_activities = []
-        for a in activities:
-            ca = {
-                "name": a["name"],
-                "distance": round(a["distance"] / 1000.0, 2),
-                "date": dateutil.parser.parse(a["start_date_local"]).date(),
-            }
-            cleaned_activities.append(ca)
-
-        return render_template("strava/activities.html", user=user, activities=cleaned_activities)
 
     return bp
