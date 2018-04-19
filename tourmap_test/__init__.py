@@ -30,6 +30,7 @@ TEST_CONFIG = {
         "STRAVA_CLIENT_BASE_URL": "http://localhost:33",
         "SQLALCHEMY_ECHO": str2bool(os.environ.get("SQLALCHEMY_ECHO", "false")),
         "MAPBOX_ACCESS_TOKEN": "MAPBOXTESTTOKEN",
+        "SERVER_NAME": "test.local",  # needed for url_for
 
         "LOG_LEVEL": "CRITICAL",
 }

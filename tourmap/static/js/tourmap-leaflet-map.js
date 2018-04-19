@@ -221,15 +221,24 @@ function simplePopupForActivity(a) {
     $(descList).append(dd);
   }
 
-  // Nasty strava link hack
   var dt = document.createElement("dt");
   var dd = document.createElement("dd")
   var stravaLink = document.createElement("a");
   $(stravaLink).attr("href", a["strava_link"]);
   $(stravaLink).attr("target", "_blank");
   $(stravaLink).text(a["strava_id"]);
-  $(dt).text("View on Strava");
+  $(dt).text("On Strava");
   $(dd).append(stravaLink);
+  $(descList).append(dt);
+  $(descList).append(dd);
+
+  var dt = document.createElement("dt");
+  var dd = document.createElement("dd")
+  var gpxLink = document.createElement("a");
+  $(gpxLink).attr("href", a["summary_gpx_link"]);
+  $(gpxLink).text("GPX");
+  $(dt).text("Download");
+  $(dd).append(gpxLink);
   $(descList).append(dt);
   $(descList).append(dd);
 

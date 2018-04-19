@@ -5,6 +5,7 @@ import calendar
 from urllib.parse import urlparse, urljoin
 
 from dateutil.relativedelta import relativedelta
+import gpxpy.gpx
 from flask import redirect, request, url_for
 
 # is_safe_url should check if the url is safe for redirects.
@@ -113,3 +114,23 @@ def str2bool(s):
     if s.strip().lower() in ["1", "true", "yes"]:
         return True
     return False
+
+
+def activities_to_gpx(activities, creator="tourmapp"):
+    """
+    Create a GPX with one track for each activity.
+
+    :returns: str representing the gpx file
+    """
+    gpx = gpxpy.gpx.GPX()
+    gpx.creator = creator
+
+    for activity in activities:
+        track = gpxpy.gpx.GPXTrack(name=activity.name)
+        gpx.tracks.append(track)
+        segment = gpxpy.gpx.GPXTrackSegment()
+        track.segments.append(segment)
+        for lat, lng in activity.latlngs:
+            segment.points.append(gpxpy.gpx.GPXTrackPoint(lat, lng))
+
+    return gpx.to_xml()

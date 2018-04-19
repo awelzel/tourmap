@@ -246,7 +246,27 @@ class Activity(db.Model, HashidMixin):
         self.total_photo_count = src.get("total_photo_count", 0)
 
 
-User.activities = db.relationship(Activity, order_by=Activity.start_date_local.desc())
+class ActivityPhotos(db.Model):
+    __tablename__ = "activity_photos"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activities.id"), nullable=False)
+
+    # A JSON map with sizes to lists of photos. Each photo is a map with
+    # "width", "height", "url", "caption"
+    data = db.Column(db.TEXT, nullable=False)
+    user = db.relationship(User)
+    activity = db.relationship(Activity)
+
+    def get_photos(self):
+        data = json.loads(self.data)
+        return {int(size): photos for (size, photos) in data.items()}
+
+
+Activity.photos = db.relationship(ActivityPhotos, order_by=ActivityPhotos.id,
+                                  uselist=False)
+User.activities = db.relationship(Activity,
+                                  order_by=Activity.start_date_local.desc())
 
 
 class Token(db.Model):
@@ -336,24 +356,3 @@ class PollState(db.Model):
         Index("ix_strava_poll_states_full_fetch_completed_at",
               "full_fetch_completed", "last_fetch_completed_at"),
     )
-
-
-class ActivityPhotos(db.Model):
-    __tablename__ = "activity_photos"
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    activity_id = db.Column(db.Integer, db.ForeignKey("activities.id"), nullable=False)
-
-    # A JSON map with sizes to lists of photos. Each photo is a map with
-    # "width", "height", "url", "caption"
-    data = db.Column(db.TEXT, nullable=False)
-    user = db.relationship(User)
-    activity = db.relationship(Activity)
-
-    def get_photos(self):
-        data = json.loads(self.data)
-        return {int(size): photos for (size, photos) in data.items()}
-
-
-Activity.photos = db.relationship(ActivityPhotos, order_by=ActivityPhotos.id,
-                                  uselist=False)

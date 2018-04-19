@@ -1,7 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from flask import current_app
+from flask import current_app, url_for
 
 
 MAPBOX_ATTRIBUTION = (
@@ -70,6 +70,9 @@ class TourController(object):
                 "elapsed_time_str": a.elapsed_time_str,
                 "moving_time_str": a.moving_time_str,
                 "strava_link": a.strava_link,
+                "summary_gpx_link": url_for("user_activities.summary_gpx",
+                                            user_hashid=a.user.hashid,
+                                            activity_hashid=a.hashid),
                 "latlngs": latlngs,
                 "total_photo_count": a.total_photo_count,
                 "photos": photos,

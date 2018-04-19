@@ -2,6 +2,7 @@ import tourmap_test
 
 from tourmap.resources import db
 
+
 class TestActivities(tourmap_test.TestCase):
 
     def _get_app_config(self):
@@ -31,3 +32,22 @@ class TestActivities(tourmap_test.TestCase):
         response = self.client.get(url)
         response.assertStatusCode(403)
 
+    def test_activity_1_gpxroute(self):
+        url = "/users/{}/activities/{}/summary_gpx".format(self.user1.hashid, self.activity1.hashid)
+        response = self.client.get(url)
+        response.assertStatusCode(200)
+        self.assertIn("application/gpx+xml", response.headers["Content-Type"])
+        self.assertIn(b"trkseg", response.data)
+        self.assertIn(b"97.96637", response.data)
+        self.assertIn("attachment; filename=20171018_Activity_1_of_User_1.gpx",
+                      response.headers["Content-Disposition"])
+
+    def test_activity_1_gpxroute_different_user(self):
+        url = "/users/{}/activities/{}/summary_gpx".format(self.user2.hashid, self.activity2.hashid)
+        response = self.client.get(url)
+        response.assertStatusCode(200)
+        self.assertIn("application/gpx+xml", response.headers["Content-Type"])
+        self.assertIn(b"trkseg", response.data)
+        self.assertIn(b"97.9444", response.data)
+        self.assertIn("attachment; filename=20160926_Activity_2_of_User_2.gpx",
+                      response.headers["Content-Disposition"])
