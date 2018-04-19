@@ -23,7 +23,7 @@ class TestTourMap(tourmap_test.TestCase):
         response.assertStatusCode(200)
 
     def test_tour_controller_activity_with_images(self):
-        result = self.tc.prepare_activities_for_map(self.tour1)
+        result = self.tc.prepare_activities_for_map(self.tour1)["activities"]
         self.assertEqual(1, len(result))
         a = result[0]
         self.assertIn("date", a)
@@ -33,7 +33,7 @@ class TestTourMap(tourmap_test.TestCase):
         self.assertIn("latlngs", a)
 
     def test_tour_controller_activity_none_activity_photos(self):
-        result = self.tc.prepare_activities_for_map(self.tour2)
+        result = self.tc.prepare_activities_for_map(self.tour2)["activities"]
         self.assertEqual(1, len(result))
         a = result[0]
         self.assertIn("date", a)
@@ -60,8 +60,8 @@ class TestTourMap(tourmap_test.TestCase):
         self.assertEqual(0, len(a["photos"]))
 
     def test_tour_controller_activity_with_empty_activity_photos(self):
-        prepared_activities = self.tc.prepare_activities_for_map(self.tour1)
-        settings = self.tc.get_map_settings(self.tour1, prepared_activities)
+        data = self.tc.prepare_activities_for_map(self.tour1)
+        settings = self.tc.get_map_settings(self.tour1, data["activities"])
 
         self.assertIn("tile_layer", settings)
         self.assertIn("polyline", settings)

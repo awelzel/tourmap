@@ -12,7 +12,7 @@ class TestTour(tourmap_test.TestCase):
 
     def setUp(self):
         super().setUp()
-        db.session.add_all([self.user1, self.user2, self.tour1])
+        db.session.add_all([self.user1, self.user2, self.activity1, self.tour1])
         db.session.commit()
 
         # Set the user_id into the session. This implies that for each
@@ -238,3 +238,18 @@ class TestTour(tourmap_test.TestCase):
 
         tour2 = Tour.query.get(self.tour2.id)
         self.assertEqual(orig_name, tour2.name)
+
+    def test_get_tour(self):
+        url = "/users/{}/tours/{}".format(self.user1.hashid, self.tour1.hashid)
+        response = self.client.get(url)
+        response.assertStatusCode(200)
+
+    def test_get_tour_summary_gpx(self):
+        url = "/users/{}/tours/{}/summary_gpx".format(self.user1.hashid, self.tour1.hashid)
+        response = self.client.get(url)
+        response.assertStatusCode(200)
+        self.assertIn("application/gpx+xml", response.headers["Content-Type"])
+        self.assertIn(b"trkseg", response.data)
+        self.assertIn(b"97.96637", response.data)
+        self.assertIn("attachment; filename=User1_Test_Tour.gpx",
+                      response.headers["Content-Disposition"])

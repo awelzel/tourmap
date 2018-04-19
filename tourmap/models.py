@@ -6,7 +6,7 @@ import polyline
 from sqlalchemy.schema import Index, UniqueConstraint
 
 from tourmap.resources import db
-from tourmap.utils import seconds_to_readable_interval
+from tourmap.utils import meters_to_distance_str, seconds_to_readable_interval
 from tourmap.utils import json
 
 
@@ -158,27 +158,15 @@ class Activity(db.Model, HashidMixin):
 
     @property
     def moving_time_str(self):
-        return seconds_to_readable_interval(seconds=self.moving_time)
+        return seconds_to_readable_interval(self.moving_time)
 
     @property
     def elapsed_time_str(self):
-        return seconds_to_readable_interval(seconds=self.elapsed_time)
+        return seconds_to_readable_interval(self.elapsed_time)
 
     @property
     def distance_str(self):
-        """
-        Cycling is all about kilometers! Suck it!
-        """
-        if self.distance is None:
-            return ""
-
-        suffix = "m"
-        divisor = 1.0
-        if self.distance > 1000.0:
-            suffix = "km"
-            divisor = 1000.0
-
-        return "{:.1f} {}".format(self.distance / divisor, suffix)
+        return meters_to_distance_str(self.distance)
 
     @property
     def elevation_gain_str(self):

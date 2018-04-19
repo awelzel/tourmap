@@ -1,8 +1,10 @@
 import logging
-logger = logging.getLogger(__name__)
 
 from flask import current_app, url_for
+from tourmap.utils import meters_to_distance_str, seconds_to_readable_interval
 
+
+logger = logging.getLogger(__name__)
 
 MAPBOX_ATTRIBUTION = (
     'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, '
@@ -10,6 +12,7 @@ MAPBOX_ATTRIBUTION = (
     'Imagery &copy <a href="http://mapbox.com">Mapbox</a>'
 )
 MAPBOX_URL = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={access_token}'
+
 
 class TourController(object):
 
@@ -51,11 +54,11 @@ class TourController(object):
     def prepare_activities_for_map(self, tour):
         """
         Prepare activity data to be displayed on a map.
-
-        # Naive sampling:
-        # "latlngs": [latlngs[0]] + latlngs[8:-7:8] + [latlngs[-1]],
         """
         activities = []
+        total_distance = 0
+        total_elevation_gain = 0
+        total_moving_time = 0
         for a in tour.activities:
             latlngs = list(a.latlngs)
             if not latlngs:
@@ -74,13 +77,27 @@ class TourController(object):
                                             user_hashid=a.user.hashid,
                                             activity_hashid=a.hashid),
                 "latlngs": latlngs,
-                "total_photo_count": a.total_photo_count,
                 "photos": photos,
             })
-        return activities
+            total_distance += (a.distance or 0)
+            total_elevation_gain += (a.total_elevation_gain or 0)
+            total_moving_time += (a.moving_time or 0)
+
+        return {
+            "activities": activities,
+            "totals": {
+                "distance_str": meters_to_distance_str(total_distance),
+                "moving_time_str": seconds_to_readable_interval(total_moving_time),
+                "elevation_gain_str": "{:.1f} m".format(total_elevation_gain),
+            }
+        }
 
     def _find_bounds(self, prepared_activities):
-        """Helper to find corner1 and corner2 values"""
+        """
+        Helper to find corner1 and corner2 values
+
+        TODO: Put this into prepare_activities_for_map() and store it there.
+        """
         lat_min, lat_max = (90, -90)
         lng_min, lng_max = (180, -180)
         for a in prepared_activities:
@@ -94,7 +111,6 @@ class TourController(object):
             lng_max = max(lng_max, max([ll[1] for ll in latlngs]))
 
         return [(lat_min, lng_min), (lat_max, lng_max)]
-
 
     def get_map_settings(self, tour, prepared_activities):
         result = {}
@@ -136,11 +152,21 @@ class TourController(object):
             "corner2": (corner2[0] + lat_wiggle, corner2[1] + lng_wiggle),
         }
 
-        # polyline options...
         result["polyline"] = {
             "options": {
                 "color": polyline_color,
                 "weight": polyline_weight,
             }
+        }
+
+        result["links"] = {
+            "summary_gpx_link": url_for("user_tours.summary_gpx",
+                                        user_hashid=tour.user.hashid,
+                                        tour_hashid=tour.hashid),
+        }
+
+        result["totals"] = {
+            "distance_str": "0 km",
+            "moving_time_str": "0 d",
         }
         return result

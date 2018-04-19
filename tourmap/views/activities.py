@@ -1,9 +1,8 @@
-from flask import Blueprint, Response, abort, render_template
+from flask import Blueprint, abort, render_template
 from flask_login import current_user, login_required
-from werkzeug.utils import secure_filename
 
 from tourmap.models import Activity, User
-from tourmap.utils import activities_to_gpx
+from tourmap.utils import activities_to_gpx, flask_attachment_response
 
 
 def create_user_activities_blueprint(app):
@@ -44,11 +43,11 @@ def create_user_activities_blueprint(app):
 
         gpx = activities_to_gpx([activity])
         date = activity.start_date_local.strftime("%Y%m%d ")
-        name = activity.name[:30].strip()  # Hard-coded max limit...
-        download_fn = ".".join([secure_filename(date + name), "gpx"])
-        response = Response(gpx, mimetype="application/gpx+xml")
-        response.headers.add("Content-Disposition", "attachment",
-                             filename=download_fn)
-        return response
+        name = activity.name[:30].strip()  # Hard-coded...
+        return flask_attachment_response(
+            data=gpx,
+            mimetype="application/gpx+xml",
+            filename=".".join([date + name, "gpx"])
+        )
 
     return bp

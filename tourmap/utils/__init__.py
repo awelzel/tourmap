@@ -4,19 +4,24 @@ Utils.
 import calendar
 from urllib.parse import urlparse, urljoin
 
-from dateutil.relativedelta import relativedelta
 import gpxpy.gpx
-from flask import redirect, request, url_for
 
-# is_safe_url should check if the url is safe for redirects.
-# See http://flask.pocoo.org/snippets/62/ for an example.
+from dateutil.relativedelta import relativedelta
+from flask import Response, redirect, request, url_for
+from werkzeug.utils import secure_filename
+
 
 def is_safe_url(target):
+    """
+    is_safe_url should check if the url is safe for redirects.
+    See http://flask.pocoo.org/snippets/62/ for an example.
+    """
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     if test_url.scheme not in ("http", "https"):
         return False
     return ref_url.netloc == test_url.netloc
+
 
 def redirect_back(default_endpoint, next_candidate=None, redirect_kwargs=None,
                   **url_for_kwargs):
@@ -28,9 +33,6 @@ def redirect_back(default_endpoint, next_candidate=None, redirect_kwargs=None,
 
     return redirect(url_for(default_endpoint, **url_for_kwargs), **redirect_kwargs)
 
-
-
-import flask_login
 
 class UserProxy(object):
     """
@@ -83,6 +85,7 @@ class UserProxy(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
 def user_loader(hashid):
     from tourmap.models import User
     return UserProxy(User.get_by_hashid(hashid))
@@ -100,8 +103,26 @@ def seconds_to_readable_interval(seconds):
 
     result = "{:02}:{:02}".format(rd.minutes, rd.seconds)
     if rd.hours > 0:
-        result = "{}:{}".format(rd.hours, result)
+        result = "{}h {}".format(rd.hours, result)
+    if rd.days > 0:
+        result = "{}d {}".format(rd.days, result)
     return result
+
+
+def meters_to_distance_str(distance):
+    """
+    Cycling is all about kilometers! Only cars drive miles...
+    """
+    if distance is None:
+        return ""
+
+    suffix = "m"
+    divisor = 1.0
+    if distance > 1000.0:
+        suffix = "km"
+        divisor = 1000.0
+
+    return "{:.1f} {}".format(distance / divisor, suffix)
 
 
 def str2bool(s):
@@ -127,6 +148,8 @@ def activities_to_gpx(activities, creator="tourmapp"):
 
     for activity in activities:
         track = gpxpy.gpx.GPXTrack(name=activity.name)
+        track.link = activity.strava_link
+        track.source = "based on strava summary polyline"
         gpx.tracks.append(track)
         segment = gpxpy.gpx.GPXTrackSegment()
         track.segments.append(segment)
@@ -134,3 +157,16 @@ def activities_to_gpx(activities, creator="tourmapp"):
             segment.points.append(gpxpy.gpx.GPXTrackPoint(lat, lng))
 
     return gpx.to_xml()
+
+
+def flask_attachment_response(data, mimetype, filename):
+    """
+    Create a response with a Content-Disposition header set to attachment.
+
+    Note: filename is filtered through werkzeug.utils.secure_filename, the
+    caller does not need to bother about whitespace/slashes/etc.
+    """
+    resp = Response(data, mimetype=mimetype)
+    resp.headers.add("Content-Disposition", "attachment",
+                     filename=secure_filename(filename))
+    return resp

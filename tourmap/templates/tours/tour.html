@@ -28,8 +28,9 @@
 
   var activities = {{ activities|tojson|safe }};
   var mapSettings = {{ map_settings|tojson|safe }};
+  var totals = {{ totals|tojson|safe }};
 
-  var mapState = mapStateMaker("mapid", activities, mapSettings, simplePopupForActivity);
+  var mapState = mapStateMaker("mapid", activities, mapSettings, totals, simplePopupForActivity);
   mapState.init();
   $(window).resize();
   setTimeout(mapState.fitBoundsSetMinZoom, 500);

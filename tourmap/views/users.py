@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, abort, request, current_app, redirect, url_for, flash, escape
+from flask import Blueprint, render_template, abort, request, redirect, url_for, flash, escape
 from flask_login import current_user, login_required
 
 from tourmap import database
+from tourmap.utils import activities_to_gpx, flask_attachment_response
 from tourmap.forms import TourForm
 from tourmap.models import User, Tour, Activity
 from tourmap.resources import db
-
 from tourmap.controllers import TourController
 
 
@@ -107,11 +107,12 @@ def create_user_tours_blueprint(app):
             return render_template("tours/edit.html", tour=tour, form=form)
 
         # Default: Just show the map...
-        prepared_activities = ctrl.prepare_activities_for_map(tour)
-        map_settings = ctrl.get_map_settings(tour, prepared_activities)
+        data = ctrl.prepare_activities_for_map(tour)
+        map_settings = ctrl.get_map_settings(tour, data["activities"])
         return render_template("tours/tour.html",
                                user=user, tour=tour,
-                               activities=prepared_activities,
+                               activities=data["activities"],
+                               totals=data["totals"],
                                map_settings=map_settings)
 
     @bp.route("/tours/<tour_hashid>/delete", methods=["POST"])
@@ -150,6 +151,20 @@ def create_user_tours_blueprint(app):
 
         form = TourForm(obj=tour)
         return render_template("tours/edit.html", tour=tour, form=form)
+
+    @bp.route("/tours/<tour_hashid>/summary_gpx")
+    def summary_gpx(user_hashid, tour_hashid):
+        user = User.get_by_hashid(user_hashid)
+        tour = Tour.get_by_hashid(tour_hashid)
+        if user is None or tour is None or tour.user.id != user.id:
+            abort(404)
+
+        gpx = activities_to_gpx(tour.activities)
+        return flask_attachment_response(
+            data=gpx,
+            mimetype="application/gpx+xml",
+            filename=".".join([tour.name[:30].strip(), "gpx"])  # Hard-coded...
+        )
 
     return bp
 

@@ -1,12 +1,13 @@
 "use strict";
 
-var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
+var mapStateMaker = function(mapId, activities, mapSettings, totals, popupMaker) {
 
   var _zoomDelta = 0.5;
   var _zoomSnap = 0.25;
   var _mapElement = $("#" + mapId);
   var _activities = activities;
   var _mapSettings = mapSettings;
+  var _totals = totals
   var _popupMaker = popupMaker;
 
   var _markersPlaced = false;
@@ -21,6 +22,45 @@ var mapStateMaker = function(mapId, activities, mapSettings, popupMaker) {
     zoomSnap: _zoomSnap,
     zoomDelta: _zoomDelta,
   });
+
+  var Totals = L.Control.extend({
+    options: {
+      position: "topright",
+    },
+    onAdd: function (map) {
+      var div = L.DomUtil.create("div", "leaflet-control-totals");
+      var descList = document.createElement("dl");
+      $(descList).addClass("dl-horizontal");
+      $(div).append(descList);
+
+
+      var descParts = [
+        ["Distance", "distance_str"],
+        ["Moving Time", "moving_time_str"],
+        ["Elevation", "elevation_gain_str"],
+      ];
+      for (var i = 0; i < descParts.length; i++) {
+        var dt = document.createElement("dt");
+        var dd = document.createElement("dd");
+        $(dt).text(descParts[i][0])
+        $(dd).text(totals[descParts[i][1]])
+        $(descList).append(dt);
+        $(descList).append(dd);
+      }
+      /* Link */
+      var dt = document.createElement("dt");
+      var dd = document.createElement("dd")
+      var gpxLink = document.createElement("a");
+      $(gpxLink).attr("href", _mapSettings["links"]["summary_gpx_link"]);
+      $(gpxLink).text("GPX");
+      $(dt).text("Download");
+      $(dd).append(gpxLink);
+      $(descList).append(dt);
+      $(descList).append(dd);
+      return div;
+    }
+  });
+  new Totals().addTo(_map);
 
   function viewSetup() {
     var corner1 = L.latLng(_mapSettings["bounds"]["corner1"]);
@@ -208,8 +248,7 @@ function simplePopupForActivity(a) {
   var descParts = [
     ["Date", "date"],
     ["Distance", "distance_str"],
-    ["Time", "moving_time_str"],
-    ["Photos", "total_photo_count"],
+    ["Moving Time", "moving_time_str"],
   ];
 
   for (var i = 0; i < descParts.length; i++) {

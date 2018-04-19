@@ -129,6 +129,7 @@ class TestCase(unittest.TestCase):
         self.start_date1 = datetime.datetime(2017, 10, 18, 8, 30)
         self.start_date_local1 = datetime.datetime(2017, 10, 18, 10, 30)
         self.utc_offset1 = 7200
+        self.distance1 = 19321
         self.moving_time1 = 3621
         self.elapsed_time1 = 5912
         self.activity1 = Activity(
@@ -152,6 +153,7 @@ class TestCase(unittest.TestCase):
         self.start_date2 = datetime.datetime(2016, 9, 26, 19, 27)
         self.start_date_local2 = datetime.datetime(2016, 9, 26, 15, 27)
         self.utc_offset2 = -14400
+        self.distance2 = 10221
         self.moving_time2 = 9011
         self.elapsed_time2 = 10221
         self.activity2 = Activity(
