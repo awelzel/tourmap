@@ -116,7 +116,7 @@ class Tour(db.Model, HashidMixin):
 User.tours = db.relationship(Tour, order_by=Tour.id)
 
 
-class Activity(db.Model):
+class Activity(db.Model, HashidMixin):
     """
     Most importantly, datetime, name and distance.
     """

@@ -21,6 +21,7 @@ def create_user_tours_blueprint(app):
 
     """
     bp = Blueprint("user_tours", __name__)
+
     @bp.record
     def check_url_prefix(state):
         """
@@ -68,7 +69,6 @@ def create_user_tours_blueprint(app):
 
         # We have a user, and maybe a valid tourname, but something
         # went wrong. Maybe the tour exists already?
-        # if this tour exists already...
         if not form.name.errors:
             if Tour.query.filter_by(user=user, name=form.name.data).count():
                 form.set_tour_exists()
@@ -78,7 +78,7 @@ def create_user_tours_blueprint(app):
     @bp.route("/tours/<tour_hashid>", methods=["GET", "POST"])
     def tour(user_hashid, tour_hashid):
         """
-        This returns the big map, visible for anyone.
+        This returns the big map, visible to anyone.
         """
         user = User.get_by_hashid(user_hashid)
         tour = Tour.get_by_hashid(tour_hashid)
@@ -157,13 +157,6 @@ def create_user_tours_blueprint(app):
 def create_user_blueprint(app):
     bp = Blueprint("users", __name__)
 
-    # It is not clear this is nice...
-    #
-    # @bp.route("/")
-    # def index():
-    #    return render_template("users/index.html",
-    #                           users=User.query.order_by(User.id))
-
     @bp.route("/<user_hashid>")
     @login_required
     def user(user_hashid):
@@ -182,20 +175,5 @@ def create_user_blueprint(app):
         return render_template("users/user.html",
                                user=user, tours=user.tours,
                                recent_activities=recent_activities)
-
-    @bp.route("/<user_hashid>/activities")
-    @login_required
-    def user_activities(user_hashid):
-        user = User.get_by_hashid(user_hashid)
-        if user is None:
-            abort(404)
-
-        if user != current_user:
-            abort(403)
-
-        user = User.get_by_hashid(user_hashid)
-        return render_template("users/activities.html",
-                               user=user,
-                               activities=user.activities)
 
     return bp

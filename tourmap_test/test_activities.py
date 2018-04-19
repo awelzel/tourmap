@@ -2,7 +2,7 @@ import tourmap_test
 
 from tourmap.resources import db
 
-class TestUser(tourmap_test.TestCase):
+class TestActivities(tourmap_test.TestCase):
 
     def _get_app_config(self):
         config = super()._get_app_config()
@@ -20,13 +20,14 @@ class TestUser(tourmap_test.TestCase):
         with self.client.session_transaction() as sess:
             sess["user_id"] = self.user1.hashid
 
-    def test_user_view_same_user(self):
-        url = "/users/{}".format(self.user1.hashid)
+    def test_all_activities(self):
+        url = "/users/{}/activities".format(self.user1.hashid)
         response = self.client.get(url)
         response.assertStatusCode(200)
-        response.assertDataContains("{}/activities".format(self.user1.hashid).encode("ascii"))
+        response.assertDataContains(b"Temperature")
 
-    def test_user_view_different_user_403(self):
-        url = "/users/{}".format(self.user2.hashid)
+    def test_all_activities_different_user_403(self):
+        url = "/users/{}/activities".format(self.user2.hashid)
         response = self.client.get(url)
         response.assertStatusCode(403)
+
