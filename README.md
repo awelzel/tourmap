@@ -1,5 +1,7 @@
 # tourmapp
 
+[![Build Status](https://travis-ci.org/awelzel/tourmapp.svg?branch=master)](https://travis-ci.org/awelzel/tourmapp)
+
 Show multiple Strava rides on a single map.
 
 A demo is running at https://tourmapp.herokuapp.com
