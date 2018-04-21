@@ -3,6 +3,7 @@ import datetime
 import dateutil.parser
 import hashids
 import polyline
+
 from sqlalchemy.schema import Index, UniqueConstraint
 
 from tourmap.resources import db
@@ -14,11 +15,10 @@ class HashidMixin(object):
 
     @classmethod
     def __get_Hashids(cls):
-        # XXX" This is ugly
-        from tourmap.app import app
-        salt = app.config["HASHIDS_SALT"]
+        from flask import current_app
+        salt = current_app.config["HASHIDS_SALT"]
         salt = "{}{}".format(cls.__name__, salt)
-        min_length = app.config["HASHIDS_MIN_LENGTH"]
+        min_length = current_app.config["HASHIDS_MIN_LENGTH"]
         return hashids.Hashids(salt, min_length=min_length)
 
     @classmethod
