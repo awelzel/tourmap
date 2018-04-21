@@ -17,3 +17,6 @@ hashids
 
 # Optionally required for Postgres support...
 psycopg2
+
+# For coverage reports
+coverage

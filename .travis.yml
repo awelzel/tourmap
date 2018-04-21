@@ -4,7 +4,7 @@ python:
 install:
   - npm install
   - pip install -r requirements.txt
-  - pip install coverage coveralls pyyaml
+  - pip install coveralls pyyaml
 script:
   - coverage3 run  --include='tourmap/*' -m unittest discover -s tourmap_test -v
 
