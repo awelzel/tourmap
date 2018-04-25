@@ -1,6 +1,6 @@
 # tourmapp
 
-[![Build Status](https://travis-ci.org/awelzel/tourmapp.svg?branch=master)](https://travis-ci.org/awelzel/tourmapp) [![Coverage Status](https://coveralls.io/repos/github/awelzel/tourmap/badge.svg?branch=master)](https://coveralls.io/github/awelzel/tourmap?branch=master)
+[![Build Status](https://travis-ci.org/awelzel/tourmap.svg?branch=master)](https://travis-ci.org/awelzel/tourmap) [![Coverage Status](https://coveralls.io/repos/github/awelzel/tourmap/badge.svg?branch=master)](https://coveralls.io/github/awelzel/tourmap?branch=master)
 
 Show multiple Strava rides on a single map.
 
