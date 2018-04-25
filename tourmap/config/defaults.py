@@ -2,7 +2,7 @@
 # Set a few default options that are needed.
 """
 # Used in templates so we do not have to hard-code this...
-APP_NAME = "tourmapp"
+APP_NAME = "tourmap"
 
 # How to access Strava
 STRAVA_OAUTH_AUTHORIZE_URL = "https://www.strava.com/oauth/authorize"
