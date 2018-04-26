@@ -13,7 +13,7 @@ from tourmap.utils.json import dumps
 from tourmap.utils.objpool import ObjectPool
 from tourmap.utils.strava import StravaClient, StravaBadRequest, InvalidAthleteAccessToken
 
-from tourmap.tasks.strava_poller import StravaPoller
+from tourmap.strava_poller import StravaPoller
 
 
 class TestStravaPoller(tourmap_test.TestCase):
