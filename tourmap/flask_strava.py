@@ -37,8 +37,8 @@ class StravaClient(object):
     def teardown(self, exception):
         ctx = stack.top
         if ctx is not None and hasattr(ctx, "strava_client"):
-            state = current_app.extensions["strava_client"]
-            state.pool.put(ctx.strava_client)
+            self._pool.put(ctx.strava_client)
+            delattr(ctx, "strava_client")
 
     @property
     def client(self):
