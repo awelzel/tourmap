@@ -6,13 +6,10 @@
   <div class="col-sm-12">
     <p>
       Clicking on the button below will authorize <em>{{ config.APP_NAME }}</em>
-      to access all your Strava data.
+      to access your Strava activity data.
     <p>
       This also means that anyone who knows about <em>{{ config.APP_NAME }}</em>
-      can see all of your tours and their corresponding activities here.
-    </p>
-    <p>
-      But, don't worry - next to no one knows about <em>{{config.APP_NAME }}</em>.
+      may see your activity data here.
     </p>
     <a href="{{ url_for("strava.authorize", next=request.args.get("next")) }}">
       <img alt="Login with Strava" src="{{ url_for("static", filename="strava/btn_strava_connectwith_light.png")}}">
