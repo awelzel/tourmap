@@ -34,29 +34,29 @@ def create_app(config=None):
             "node_modules/jquery/dist/jquery.js",
             "node_modules/bootstrap/dist/js/bootstrap.js",
             "js/tourmap.js",
-            output="gen/tourmap.js"
+            output="gen/tourmap-%(version)s.js"
         ),
         "css": Bundle(
             "node_modules/bootstrap/dist/css/bootstrap.css",
             "node_modules/bootstrap/dist/css/bootstrap-theme.css",
             "css/tourmap.css",
-            output="gen/tourmap.css"
+            output="gen/tourmap-%(version)s.css"
         ),
         "map_js": Bundle(
             "node_modules/leaflet/dist/leaflet.js",
             "node_modules/leaflet.markercluster/dist/leaflet.markercluster.js",
-            output="gen/map.js"
+            output="gen/map-%(version)s.js"
         ),
         "map_css": Bundle(
             "node_modules/leaflet/dist/leaflet.css",
             "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
             "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
             "css/tourmap.css",
-            output="gen/map.css"
+            output="gen/map-%(version)s.css"
         ),
         "tourmap_leaflet_map_js": Bundle(
             "js/tourmap-leaflet-map.js",
-            output="gen/tourmap-leaflet-map.js"
+            output="gen/tourmap-leaflet-map-%(version)s.js"
         ),
     }
     assets.register(bundles)
@@ -79,9 +79,12 @@ def create_app(config=None):
         """
         Make sure we cache static files, but nothing else.
         """
-            # https://stackoverflow.com/a/2068407
+        # https://stackoverflow.com/a/2068407
         if not request.path.startswith(app.static_url_path):
-            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate" # HTTP 1.1.
+            response.cache_control.max_age = 0
+            response.cache_control.no_cache = True
+            response.cache_control.no_store = True
+            response.cache_control.must_revalidate = True
             response.headers["Pragma"] = "no-cache" # HTTP 1.0.
             response.headers["Expires"] = "0" # Proxies.
 
