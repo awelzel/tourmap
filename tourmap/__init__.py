@@ -109,7 +109,15 @@ def create_app(config=None):
     @app.cli.command()
     def iem():
         from tourmap.resources import db, strava
-        from tourmap.models import Activity, ActivityPhotos, Tour, User
+        from tourmap.models import Activity, ActivityPhotos, Token, Tour, User
+        from tourmap.strava_poller import StravaPoller
+
+        kwargs = StravaPoller.config_kwargs_from_env(environ=app.config)
+        strava_poller = StravaPoller(
+            session=db.session,
+            strava_client_pool=strava._pool,
+            **kwargs,
+        )
         import IPython
         IPython.embed()
 

@@ -37,7 +37,7 @@ class User(db.Model, HashidMixin):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     strava_id = db.Column(db.BigInteger, unique=True, nullable=False)
-    email = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=True)
     firstname = db.Column(db.String(255))
     lastname = db.Column(db.String(255))
     country = db.Column(db.String(255))
@@ -263,7 +263,27 @@ class Token(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"),
                         unique=True, nullable=False)
     access_token = db.Column(db.String(64), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    refresh_token = db.Column(db.String(64), nullable=True)
+
     user = db.relationship(User, backref=db.backref("token", uselist=False))
+
+    def should_refresh(self):
+        """
+        Very strava specific...
+        """
+        if not self.refresh_token or self.expires_at is None:
+            return True
+
+        return datetime.datetime.utcnow() > (self.expires_at - datetime.timedelta(seconds=45 * 60))
+
+    def update_from_strava(self, data):
+        expires_at = datetime.datetime.utcfromtimestamp(data["expires_at"])
+        if expires_at < datetime.datetime.utcnow():
+            raise ValueError("expires_at in past? ({})".format(expires_at))
+        self.access_token = data["access_token"]
+        self.refresh_token = data["refresh_token"]
+        self.expires_at = expires_at
 
 
 class PollState(db.Model):

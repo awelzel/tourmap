@@ -35,6 +35,7 @@ class InvalidAccessToken(StravaError):
         self.message = message
         self.error_data = error_data
 
+
 class InvalidAthleteAccessToken(InvalidAccessToken):
     """Raised when an Athletes access token was invalid."""
     pass
@@ -44,6 +45,15 @@ class StravaClient(object):
 
     BASE_URL = "https://www.strava.com"
     DEFAULT_TIMEOUT = (10, 10)
+    SCOPES = {
+        "read",
+        "read_all",
+        "profile:read_all",
+        "profile:write",
+        "activity:read",
+        "activity:read_all",
+        "activity:write",
+    }
 
     @staticmethod
     def from_env(environ=None):
@@ -91,22 +101,25 @@ class StravaClient(object):
             logger.exception("Error doing request...")
             raise StravaError(repr(e) + " --- " + response.text)
 
-    def authorize_redirect_url(self, redirect_uri, scope=None,
+    def authorize_redirect_url(self, redirect_uri, scope,
                                approval_prompt="auto", state=None):
         """
         Create an URL representing the authorize endpoint on Strava's side.
         """
         if approval_prompt and approval_prompt not in ["auto", "force"]:
             raise ValueError("Bad approval_prompt value")
+
+        if not all(s in StravaClient.SCOPES for s in scope):
+            raise ValueError("Invalid scopes provided")
+
         url = urljoin(self.__base_url, "oauth/authorize")
         args = {
             "client_id": self.__client_id,
             "redirect_uri": redirect_uri,
             "response_type": "code",
             "approval_prompt": approval_prompt,
+            "scope": ",".join(scope),
         }
-        if scope:
-            args["scope"] = scope
         if state:
             args["state"] = state
 
@@ -121,7 +134,20 @@ class StravaClient(object):
             data={
                 "client_id": self.__client_id,
                 "client_secret": self.__client_secret,
+                "grant_type": "authorization_code",
                 "code": code,
+            }
+        )
+        return response.json()
+
+    def refresh_token(self, refresh_token):
+        response = self._post(
+            url="oauth/token",
+            data={
+                "client_id": self.__client_id,
+                "client_secret": self.__client_secret,
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
             }
         )
         return response.json()
@@ -133,7 +159,6 @@ class StravaClient(object):
             "response_data": data,
             "response_headers": dict(response.headers),
         }
-        status_code = response.status_code
         errors = data.get("errors", [])
         for e in errors:
             if e.get("code") == "invalid" and e.get("field") == "access_token":
@@ -162,7 +187,7 @@ class StravaClient(object):
             )
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.Timeout as e:
+        except requests.exceptions.Timeout:
             raise StravaTimeout()
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code

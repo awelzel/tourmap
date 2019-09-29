@@ -56,7 +56,6 @@ class StravaPoller(object):
         for s, default, cast_fun in settings:
             environ_key = "{}_{}".format(prefix, s.upper())
             result[s] = cast_fun(environ.get(environ_key, default))
-        logger.info("config=%s", repr(result))
         return result
 
     def __init__(self, session, strava_client_pool,
@@ -139,9 +138,25 @@ class StravaPoller(object):
         them to the executor...
         """
         for poll_state in self._get_poll_states():
-            if not poll_state.user.token:
+            token = poll_state.user.token
+            if not token:
                 logger.debug("Skipping %s without token", poll_state.user)
                 continue
+
+            if token.should_refresh():
+                logger.info("Refreshing token %s of user %s",
+                            token.id, token.user_id)
+
+                refresh_token = token.refresh_token
+                if not refresh_token:
+                    logger.info("First fetch for refresh_token using %r for %s",
+                                token.access_token, token.user)
+                    refresh_token = token.access_token
+
+                with self.__strava_client_pool.use() as client:
+                    result = client.refresh_token(refresh_token)
+                    token.update_from_strava(result)
+                    self.__session.commit()
 
             submit_kwargs = {
                 "user_id": poll_state.user.id,
@@ -238,7 +253,7 @@ class StravaPoller(object):
                 # just removed access to their data for us. We mark their
                 # PollState to have an error...
                 logger.warning("Invalid access token for %s", poll_state.user)
-                poll_state.set_error(e.message, e.error_data)
+                poll_state.set_error(str(e.args), e.error_data)
                 poll_state.stop()
                 self.__session.commit()
             except Exception as e:

@@ -3,7 +3,16 @@ Strava OAUTH flow hacked together.
 """
 from urllib.parse import urlunparse, urlencode, parse_qsl
 
-from flask import Blueprint, redirect, request, url_for, render_template, abort, current_app, flash
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for
+)
 import flask_login
 
 import tourmap.utils
@@ -28,6 +37,10 @@ class LoginController(object):
         :param data: as returned by a token exchange from Strava.
         :returns: tuple representing (new_user, user)
         """
+        for f in ["athlete", "access_token", "refresh_token", "expires_at"]:
+            if f not in data:
+                raise KeyError(f)
+
         athlete = data["athlete"]
         new_user = False
         tour = None
@@ -49,11 +62,11 @@ class LoginController(object):
         # Create or update the token if needed...
         token = Token.query.filter_by(user=user).one_or_none()
         if token is None:
-            token = Token(user=user)
-
-        if data["access_token"] != token.access_token:
-            current_app.logger.info("Setting token for %s", user)
-            token.access_token = data["access_token"]
+            token = Token()
+            token.update_from_strava(data)
+            token.user = user
+        else:
+            token.update_from_strava(data)
 
         poll_state = PollState.query.filter_by(user=user).one_or_none()
         if poll_state is None:
@@ -109,7 +122,7 @@ def create_blueprint(app):
         from the Strava page to here.
         """
         if "error" in request.args:
-            msg = "Connect with Strava failed: {!r}".format(request.args["error"])
+            msg = "Strava error in callback: {!r}".format(request.args["error"])
             current_app.logger.warning(msg)
             flash(msg, category="error")
             return redirect(url_for("strava.login"))
@@ -117,7 +130,7 @@ def create_blueprint(app):
         state = request.args.get("state")
         state_dict = dict(parse_qsl(state))
         if state_dict.get("state") != "CONNECT":
-            msg = "Connect with Strava failed (state was {!r})".format(state)
+            msg = "Strava callback with unexpected state: {!r}".format(state)
             current_app.logger.error(msg)
             flash(msg, category="error")
             return redirect(url_for("strava.login"))
@@ -125,7 +138,7 @@ def create_blueprint(app):
         try:
             data = resources.strava.client.exchange_token(request.args["code"])
         except tourmap.utils.strava.StravaBadRequest as e:
-            msg = "Connect with Strava failed: {!r}".format(e.errors)
+            msg = "Token exchange with Strava failed: {!r}".format(e.errors)
             current_app.logger.error(msg)
             flash(msg, category="error")
             return redirect(url_for("strava.login"))
@@ -162,7 +175,8 @@ def create_blueprint(app):
         app.logger.info("Strava authorize call!")
 
         # XXX: This may break behind a proxy, or maybe not?
-        components = (request.scheme, request.host, url_for("strava.callback"), None, None, None)
+        components = (request.scheme, request.host, url_for("strava.callback"),
+                      None, None, None)
         redirect_uri = urlunparse(components)
 
         state = {
@@ -173,7 +187,7 @@ def create_blueprint(app):
 
         return redirect(resources.strava.client.authorize_redirect_url(
             redirect_uri=redirect_uri,
-            scope=None,
+            scope=["read", "activity:read_all"],
             state=urlencode(state),
             approval_prompt="auto"
         ))
