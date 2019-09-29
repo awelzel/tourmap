@@ -1,15 +1,15 @@
-Flask==0.12.2
+Flask==1.1.1
 Flask-Assets==0.12
-Flask-SQLAlchemy==2.3.2
+Flask-SQLAlchemy==2.4.1
 Flask-WTF==0.14.2
-Flask-Login==0.4.0
-SQLAlchemy==1.1.15
+Flask-Login==0.4.1
+SQLAlchemy==1.3.8
 
-requests==2.18.4
+requests==2.22.0
 
 # Polyline/Gpx stuff
-polyline==1.3.2
-gpxpy==1.2.0
+polyline==1.4.0
+gpxpy==1.3.5
 
 # More required things...
 python-dateutil
