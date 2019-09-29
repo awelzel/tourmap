@@ -67,7 +67,7 @@ class TestableResponse(flask.wrappers.Response):
                 msg = "{!r} is not a redirect code".format(self.status_code)
                 raise AssertionError(msg)
 
-        if "Location" not in  self.headers:
+        if "Location" not in self.headers:
             raise AssertionError("No Location header present")
         location = self.headers["Location"]
         if location_contains and location_contains not in location:
@@ -113,8 +113,6 @@ class TestCase(unittest.TestCase):
         # Push an app context...
         self.app.app_context().push()
         self.client = self.app.test_client()
-        self.assertIsNotNone(self.app)
-
 
         # Wipe all test tables...
         for t in reversed(db.metadata.sorted_tables):

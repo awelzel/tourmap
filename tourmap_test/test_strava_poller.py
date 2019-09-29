@@ -1,4 +1,5 @@
 import datetime
+import json
 import unittest.mock
 import uuid
 from concurrent.futures import Future
@@ -11,7 +12,7 @@ from tourmap.resources import db
 from tourmap.utils import dt2ts
 from tourmap.utils.json import dumps
 from tourmap.utils.objpool import ObjectPool
-from tourmap.utils.strava import StravaClient, StravaBadRequest, InvalidAthleteAccessToken
+from tourmap.utils.strava import StravaClient, InvalidAthleteAccessToken
 
 from tourmap.strava_poller import StravaPoller
 
@@ -70,7 +71,7 @@ class TestStravaPoller(tourmap_test.TestCase):
         poll_state2 = PollState(
             user=self.cuser,
             full_fetch_completed=True,
-            last_fetch_completed_at=datetime.datetime.utcnow(), # This should not show up
+            last_fetch_completed_at=datetime.datetime.utcnow(),  # This should not show up
         )
         self.session.add_all([poll_state1, poll_state2])
         self.session.commit()
@@ -118,13 +119,16 @@ class TestStravaPoller(tourmap_test.TestCase):
 
     def test_json_dumps(self):
         serialize_this = {
-            "now": datetime.datetime.utcnow(),
-            "today": datetime.date.today(),
+            "now": datetime.datetime(2019, 9, 29, 13, 34, 24),
+            "today": datetime.date(2019, 9, 29),
             "array": [
                 1, "Stuff", {}
             ]
         }
-        result = dumps(serialize_this)
+        result_str = dumps(serialize_this)
+        result = json.loads(result_str)
+        self.assertEqual("2019-09-29T13:34:24", result["now"])
+        self.assertEqual("2019-09-29", result["today"])
 
     def test_process_results_crash1(self):
         from tourmap_test.data import poller_crash_results1
@@ -199,7 +203,7 @@ class TestStravaPoller(tourmap_test.TestCase):
         self.strava_poller._process_result_futures(futures)
 
         self.assertTrue(self.poll_state.error_happened)
-        self.assertEqual("Really bad...", self.poll_state.error_message)
+        self.assertIn("Really bad...", self.poll_state.error_message)
         self.assertIn("Cache-Control", self.poll_state.error_data)
         code = self.poll_state.get_error_data()["response_data"]["errors"][0]["code"]
         self.assertEqual("invalid", code)

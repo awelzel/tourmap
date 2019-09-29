@@ -1,8 +1,10 @@
+import datetime
 import random
+import time
 import uuid
 import unittest.mock
 
-from tourmap.models import User, Tour
+from tourmap.models import User, Token, Tour
 from tourmap.utils.strava import StravaClient, StravaBadRequest
 
 import tourmap.flask_strava as flask_strava
@@ -16,14 +18,20 @@ class StravaLoginTest(tourmap_test.TestCase):
         super().setUp()
 
         self.oauth_token_response_error = {
-            "message":"Bad Request",
+            "message": "Bad Request",
         }
         self.strava_id = random.randint(1, 100000000)
         self.test_code = uuid.uuid4().hex
         self.test_token = uuid.uuid4().hex
+        self.test_refresh_token = uuid.uuid4().hex
+        self.test_expires_at = int(time.time()) + 21600
+        self.test_expires_at_dt = datetime.datetime.utcfromtimestamp(self.test_expires_at)
 
         self.oauth_token_response_ok = {
             'access_token': self.test_token,
+            'expires_at': self.test_expires_at,
+            'expires_in': 21600,
+            'refresh_token': self.test_refresh_token,
             'token_type': 'Bearer',
             'athlete': {
                 "friend": None,
@@ -51,6 +59,7 @@ class StravaLoginTest(tourmap_test.TestCase):
         self.app.extensions["strava_client"] = flask_strava.StravaState(
             cfn=lambda: self.strava_client_mock
         )
+        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
 
     def test_strava_callback_no_code(self):
         query_string = {
@@ -64,7 +73,6 @@ class StravaLoginTest(tourmap_test.TestCase):
                 "code": self.test_code,
                 "state": "state=CONNECT",
         }
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
         response.assertStatusCode(302)
@@ -89,7 +97,6 @@ class StravaLoginTest(tourmap_test.TestCase):
                 "code": self.test_code,
                 "state": "state=CONNECT",
         }
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
 
@@ -100,6 +107,8 @@ class StravaLoginTest(tourmap_test.TestCase):
         self.assertEqual(1, User.query.count())
         user = User.query.first()
         self.assertEqual(user.token.access_token, self.test_token)
+        self.assertEqual(user.token.refresh_token, self.test_refresh_token)
+        self.assertEqual(user.token.expires_at, self.test_expires_at_dt)
 
         self.assertIsNotNone(user.poll_state)
         self.assertIs(False, user.poll_state.full_fetch_completed)
@@ -109,7 +118,6 @@ class StravaLoginTest(tourmap_test.TestCase):
                 "code": self.test_code,
                 "state": "state=CONNECT",
         }
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
         response.assertIsRedirect(302, "/users/")
@@ -127,7 +135,6 @@ class StravaLoginTest(tourmap_test.TestCase):
                 "code": self.test_code,
                 "state": "state=CONNECT&next=%2Ftours%2F",
         }
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
 
@@ -140,7 +147,6 @@ class StravaLoginTest(tourmap_test.TestCase):
                 "code": self.test_code,
                 "state": "state=CONNECT",
         }
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
 
         response.assertIsRedirect(302, "/users/")
@@ -163,9 +169,9 @@ class StravaLoginTest(tourmap_test.TestCase):
             message="Bad Request",
             errors=[
                 {
-                    "resource":"Application",
-                    "field":"client_id",
-                    "code":"invalid",
+                    "resource": "Application",
+                    "field": "client_id",
+                    "code": "invalid",
                 }
             ]
         )
@@ -177,14 +183,13 @@ class StravaLoginTest(tourmap_test.TestCase):
         response = self.client.get(response.headers["Location"])
         response.assertStatusCode(200)
         response.assertDataContains(b"alert-danger")
-        response.assertDataContains(b"Connect with Strava failed")
+        response.assertDataContains(b"Token exchange with Strava failed")
 
     def test_strava_callback__clears_error_and_starts(self):
         query_string = {
                 "code": self.test_code,
                 "state": "state=CONNECT",
         }
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
         response.assertIsRedirect(302, "/users/")
@@ -195,7 +200,6 @@ class StravaLoginTest(tourmap_test.TestCase):
         tourmap_test.db.session.commit()
         tourmap_test.db.session.expunge_all()
 
-        self.strava_client_mock.exchange_token.return_value = self.oauth_token_response_ok
         response = self.client.get("/strava/callback", query_string=query_string)
         self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
         response.assertIsRedirect(302, "/users/")
@@ -204,3 +208,42 @@ class StravaLoginTest(tourmap_test.TestCase):
         self.assertFalse(user.poll_state.error_happened)
         self.assertFalse(user.poll_state.error_message)
         self.assertFalse(user.poll_state.stopped)
+
+    def test_strava_callback__no_email(self):
+        query_string = {
+                "code": self.test_code,
+                "state": "state=CONNECT",
+        }
+        del self.oauth_token_response_ok["athlete"]["email"]
+        response = self.client.get("/strava/callback", query_string=query_string)
+        self.strava_client_mock.exchange_token.assert_called_with(self.test_code)
+        response.assertIsRedirect(302, "/users/")
+
+        user = User.query.first()
+        self.assertIsNone(user.email)
+
+    def test_strava_callback__expires_at_in_past(self):
+        query_string = {
+                "code": self.test_code,
+                "state": "state=CONNECT",
+        }
+        self.oauth_token_response_ok["expires_at"] = int(time.time()) - 3600
+
+        with self.assertRaisesRegex(ValueError, "expires_at in past"):
+            self.client.get("/strava/callback", query_string=query_string)
+
+        user = User.query.first()
+        self.assertEqual(self.strava_id, user.strava_id)
+        token = Token.query.first()
+        self.assertIsNone(token)
+
+    def test_strava_callback__missing_refresh_token(self):
+        query_string = {
+                "code": self.test_code,
+                "state": "state=CONNECT",
+        }
+        del self.oauth_token_response_ok["refresh_token"]
+
+        with self.assertRaisesRegex(KeyError, "refresh_token"):
+            self.client.get("/strava/callback", query_string=query_string)
+        self.assertIsNone(User.query.first())

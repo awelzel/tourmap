@@ -4,9 +4,10 @@ Test the /users/{}/tours/{} endpoints
 import json
 import tourmap_test
 
-from tourmap.models import User, Tour, ActivityPhotos
+from tourmap.models import ActivityPhotos
 from tourmap.resources import db
 from tourmap.controllers import TourController
+
 
 class TestTourMap(tourmap_test.TestCase):
 
@@ -54,12 +55,12 @@ class TestTourMap(tourmap_test.TestCase):
         db.session.add_all([activity, photos])
         db.session.commit()
         result = self.tc.prepare_activities_for_map(self.tour2)
-        self.assertEqual(1, len(result))
-        a = result[0]
+        self.assertEqual(1, len(result["activities"]))
+        a = result["activities"][0]
         self.assertIn("photos", a)
         self.assertEqual(0, len(a["photos"]))
 
-    def test_tour_controller_activity_with_empty_activity_photos(self):
+    def test_tour_controller_bounds(self):
         data = self.tc.prepare_activities_for_map(self.tour1)
         settings = self.tc.get_map_settings(self.tour1, data["activities"])
 

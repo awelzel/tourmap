@@ -3,6 +3,7 @@ import unittest
 
 from tourmap.utils import objpool
 
+
 class NumberMaker(object):
 
     def __init__(self):
@@ -12,10 +13,8 @@ class NumberMaker(object):
         self.counter += 1
         return self.counter
 
-class TestObjectPool(unittest.TestCase):
 
-    def setUp(self):
-        pass
+class TestObjectPool(unittest.TestCase):
 
     def test_pool_construction_with_maxsize(self):
         pool = objpool.ObjectPool(NumberMaker().cfn, maxsize=3)
@@ -80,4 +79,4 @@ class TestObjectPool(unittest.TestCase):
             with pool.use() as obj2:
                 with self.assertRaises(objpool.Empty):
                     with pool.use(block=False) as obj3:
-                        pass
+                        self.assertEqual(3, obj3)

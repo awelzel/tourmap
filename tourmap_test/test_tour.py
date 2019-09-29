@@ -3,6 +3,7 @@ import tourmap_test
 from tourmap.models import Tour
 from tourmap.resources import db
 
+
 class TestTour(tourmap_test.TestCase):
 
     def _get_app_config(self):

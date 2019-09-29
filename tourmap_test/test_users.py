@@ -2,6 +2,7 @@ import tourmap_test
 
 from tourmap.resources import db
 
+
 class TestUser(tourmap_test.TestCase):
 
     def _get_app_config(self):
