@@ -1,9 +1,8 @@
-import os
 import logging
 
 import click
 
-from flask import Flask, render_template, abort, request
+from flask import Flask, request
 from flask_assets import Environment, Bundle
 
 from flask_login import LoginManager
@@ -61,7 +60,6 @@ def create_app(config=None):
     }
     assets.register(bundles)
 
-
     # Install a few views...
     from tourmap.views import activities, index, strava, tours, users
     app.register_blueprint(activities.create_user_activities_blueprint(app),
@@ -72,7 +70,6 @@ def create_app(config=None):
     app.register_blueprint(users.create_user_tours_blueprint(app),
                            url_prefix="/users/<user_hashid>")
     app.register_blueprint(tours.create_blueprint(app), url_prefix="/tours")
-
 
     @app.after_request
     def add_cache_headers(response):
@@ -85,11 +82,10 @@ def create_app(config=None):
             response.cache_control.no_cache = True
             response.cache_control.no_store = True
             response.cache_control.must_revalidate = True
-            response.headers["Pragma"] = "no-cache" # HTTP 1.0.
-            response.headers["Expires"] = "0" # Proxies.
+            response.headers["Pragma"] = "no-cache"  # HTTP 1.0.
+            response.headers["Expires"] = "0"  # Proxies.
 
         return response
-
 
     # Support a few more flask commands
     @app.cli.command()

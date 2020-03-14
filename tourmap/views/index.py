@@ -2,6 +2,7 @@ from flask import Blueprint, render_template
 
 from tourmap.models import Tour
 
+
 def create_blueprint(app):
     bp = Blueprint("index", __name__)
 

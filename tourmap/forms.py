@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, TextAreaField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Optional
 
+
 class TourForm(FlaskForm):
 
     tour_exists_errors = ["A tour with this name already exists."]

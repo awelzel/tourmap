@@ -8,6 +8,7 @@ from tourmap.utils.objpool import ObjectPool
 
 from flask import _app_ctx_stack as stack, current_app
 
+
 class StravaState(object):
 
     def __init__(self, cfn):
