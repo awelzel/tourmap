@@ -11,7 +11,6 @@ MAPBOX_ATTRIBUTION = (
     '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, '
     'Imagery &copy <a href="http://mapbox.com">Mapbox</a>'
 )
-MAPBOX_URL = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={access_token}'
 
 
 class TourController(object):
@@ -115,7 +114,9 @@ class TourController(object):
     def get_map_settings(self, tour, prepared_activities):
         result = {}
 
-        tile_layer_id = "mapbox.run-bike-hike"
+        mapbox_url = ("https://api.mapbox.com/styles/v1/{id}"
+                      "/tiles/{z}/{x}/{y}?access_token={access_token}")
+        tile_layer_id = "mapbox/streets-v11"
         polyline_color = tour.polyline_color or "red"
         polyline_weight = tour.polyline_weight or 5
         marker_positioning = tour.marker_positioning or "end"
@@ -123,7 +124,7 @@ class TourController(object):
 
         result["tile_layer"] = {
             "provider": "mapbox",
-            "url_template": MAPBOX_URL,
+            "url_template": mapbox_url,
             "options": {
                 "access_token": current_app.config["MAPBOX_ACCESS_TOKEN"],
                 "max_zoom": 18,
